@@ -7,6 +7,8 @@ export interface SectionCardProps {
   children: React.ReactNode;
   className?: string;
   contentClassName?: string;
+  /** Optional right-side content in the header (e.g. stats or actions) */
+  headerRight?: React.ReactNode;
   /** Optional right-side content in the header (e.g. calendar arrows) */
   trailing?: React.ReactNode;
 }
@@ -15,11 +17,13 @@ const SectionCard: React.FC<SectionCardProps> = ({
   title,
   subtitle,
   trailing,
+  headerRight,
   children,
   className,
   contentClassName,
 }) => {
-  const hasHeader = title || subtitle || trailing;
+  const rightContent = headerRight ?? trailing;
+  const hasHeader = title || subtitle || rightContent;
 
   return (
     <section
@@ -45,9 +49,9 @@ const SectionCard: React.FC<SectionCardProps> = ({
             )}
           </div>
 
-          {trailing && (
+          {rightContent && (
             <div className="flex-shrink-0">
-              {trailing}
+              {rightContent}
             </div>
           )}
         </div>
