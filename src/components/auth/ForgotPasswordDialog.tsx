@@ -58,7 +58,7 @@ const ForgotPasswordDialog: React.FC<Props> = ({ isOpen, onClose }) => {
           <TextField
             label="Email"
             type="email"
-            placeholder="admin@zonerlost.com"
+            placeholder=""
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />

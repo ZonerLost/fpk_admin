@@ -5,6 +5,7 @@ import Button from "../../shared/inputs/Button";
 import { cn } from "../../shared/utils/cn";
 import { useAuth } from "../../context/AuthContext";
 
+
 type Props = {
   onForgotPassword: () => void;
 };
@@ -35,7 +36,7 @@ const LoginFormCard: React.FC<Props> = ({ onForgotPassword }) => {
         token: "dummy-token", // fake token
         user: {
           email,
-          name: "Zonerlost Admin",
+          name: "",
         },
         remember,
       });
@@ -58,7 +59,7 @@ const LoginFormCard: React.FC<Props> = ({ onForgotPassword }) => {
       <div className="flex items-center justify-center">
   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-400/10 overflow-hidden">
     <img
-      src="./public/images/Vector.png"  
+      src="/images/logo.png"
       alt="GDS logo"
       className="h-8 w-8 object-contain"
     />
@@ -88,28 +89,29 @@ const LoginFormCard: React.FC<Props> = ({ onForgotPassword }) => {
           />
         </div>
 
-        {/* Password + toggle */}
+                {/* Password + toggle */}
         <div>
-          <label className="text-xs font-medium text-slate-200 md:text-sm">
-            Password
-          </label>
-          <div className="mt-1 flex items-center rounded-full border border-amber-700/40 bg-[#141008] px-3 py-1.5">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="flex-1 bg-transparent px-1 py-1 text-xs text-slate-100 outline-none md:text-sm"
-            />
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <TextField
+                label="Password"
+                placeholder="Enter your password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="rounded-full border-amber-700/40 bg-[#141008] px-4 py-3"
+              />
+            </div>
             <button
               type="button"
               onClick={() => setShowPassword((s) => !s)}
-              className="ml-2 text-xs text-slate-300 hover:text-slate-100"
+              className="mt-6 text-xs font-medium text-amber-300 hover:text-amber-200 md:text-sm"
             >
               {showPassword ? "Hide" : "Show"}
             </button>
           </div>
         </div>
+
 
         {/* Remember + forgot */}
         <div className="flex flex-col items-start justify-between gap-2 text-xs text-slate-300 md:flex-row md:items-center md:text-sm">
