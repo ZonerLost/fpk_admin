@@ -3,22 +3,61 @@ import SectionCard from "../../shared/layout/SectionCard";
 import TextField from "../../shared/inputs/TextField";
 import Button from "../../shared/inputs/Button";
 
+type BadgeDef = {
+  id: string;
+  name: string;
+  rule: string;
+  iconUrl: string;
+};
+
 const GamificationSettingsSection: React.FC = () => {
   const [pointsLearn, setPointsLearn] = React.useState("10");
   const [pointsTrain, setPointsTrain] = React.useState("20");
   const [pointsLive, setPointsLive] = React.useState("30");
 
-  const [level1, setLevel1] = React.useState("0");
-  const [level2, setLevel2] = React.useState("1000");
-  const [level3, setLevel3] = React.useState("5000");
-  const [level4, setLevel4] = React.useState("15000");
+  const [badges, setBadges] = React.useState<BadgeDef[]>([
+    {
+      id: "b1",
+      name: "Consistency Starter",
+      rule: "Complete 3 sessions in a week",
+      iconUrl: "",
+    },
+    {
+      id: "b2",
+      name: "Weekend Warrior",
+      rule: "Complete 2 sessions on weekends",
+      iconUrl: "",
+    },
+  ]);
+
+  const updateBadge = (id: string, patch: Partial<BadgeDef>) => {
+    setBadges((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, ...patch } : b))
+    );
+  };
+
+  const addBadge = () => {
+    setBadges((prev) => [
+      ...prev,
+      {
+        id: `b-${Date.now()}`,
+        name: "New Badge",
+        rule: "",
+        iconUrl: "",
+      },
+    ]);
+  };
+
+  const removeBadge = (id: string) => {
+    setBadges((prev) => prev.filter((b) => b.id !== id));
+  };
 
   const handleSave = () => {
     console.log("Gamification settings", {
       pointsLearn,
       pointsTrain,
       pointsLive,
-      thresholds: [level1, level2, level3, level4],
+      badges,
     });
   };
 
@@ -29,7 +68,7 @@ const GamificationSettingsSection: React.FC = () => {
         subtitle="Adjust how many XP points players earn for each activity."
         className="bg-[#04130d]"
       >
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           <TextField
             label="Points: Complete Learn session"
             type="number"
@@ -55,39 +94,62 @@ const GamificationSettingsSection: React.FC = () => {
       </SectionCard>
 
       <SectionCard
-        title="League Thresholds"
-        subtitle="Define XP thresholds for each league or level."
+        title="Badges"
+        subtitle="Define badge rules and attach icons (URL for now)."
         className="bg-[#04130d]"
       >
-        <div className="grid gap-4 md:grid-cols-4">
-          <TextField
-            label="Level 1 starts at"
-            type="number"
-            min={0}
-            value={level1}
-            onChange={(e) => setLevel1(e.target.value)}
-          />
-          <TextField
-            label="Level 2 starts at"
-            type="number"
-            value={level2}
-            onChange={(e) => setLevel2(e.target.value)}
-          />
-          <TextField
-            label="Level 3 starts at"
-            type="number"
-            value={level3}
-            onChange={(e) => setLevel3(e.target.value)}
-          />
-          <TextField
-            label="Level 4 starts at"
-            type="number"
-            value={level4}
-            onChange={(e) => setLevel4(e.target.value)}
-          />
+        <div className="space-y-3">
+          {badges.map((b) => (
+            <div
+              key={b.id}
+              className="rounded-xl border border-white/10 bg-black/20 p-3"
+            >
+              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                <TextField
+                  label="Badge name"
+                  value={b.name}
+                  onChange={(e) =>
+                    updateBadge(b.id, { name: e.target.value })
+                  }
+                />
+                <TextField
+                  label="Rule/definition"
+                  value={b.rule}
+                  onChange={(e) =>
+                    updateBadge(b.id, { rule: e.target.value })
+                  }
+                />
+                <TextField
+                  label="Icon URL"
+                  placeholder="https://..."
+                  value={b.iconUrl}
+                  onChange={(e) =>
+                    updateBadge(b.id, { iconUrl: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="mt-3 flex justify-end">
+                <Button
+                  variant="secondary"
+                  className="rounded-lg border border-white/10 bg-transparent hover:bg-white/10"
+                  onClick={() => removeBadge(b.id)}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-between">
+          <Button
+            variant="secondary"
+            className="rounded-lg border border-white/10 bg-transparent hover:bg-white/10"
+            onClick={addBadge}
+          >
+            + Add Badge
+          </Button>
           <Button variant="primary" onClick={handleSave}>
             Save Changes
           </Button>

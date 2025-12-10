@@ -1,11 +1,9 @@
 import React from "react";
 import SlideOver from "../../shared/overlay/SlideOver";
 import TextField from "../../shared/inputs/TextField";
-import ToggleChips, {
-  type ToggleOption,
-} from "../../shared/inputs/ToggleChips";
+import ToggleChips, { type ToggleOption } from "../../shared/inputs/ToggleChips";
 import Button from "../../shared/inputs/Button";
-import type { SessionItem } from "./types";
+import type { SessionItem, SessionType } from "./types";
 
 type Props = {
   isOpen: boolean;
@@ -25,19 +23,32 @@ const ScheduleSessionSlideOver: React.FC<Props> = ({
   onCreate,
 }) => {
   const [title, setTitle] = React.useState("");
+  const [displayTitle, setDisplayTitle] = React.useState("");
+  const [releaseLabel, setReleaseLabel] = React.useState("");
+
   const [host, setHost] = React.useState("");
   const [date, setDate] = React.useState("");
   const [time, setTime] = React.useState("");
-  const [sessionType, setSessionType] = React.useState("Live Training");
+  const [sessionType, setSessionType] = React.useState<SessionType>("Live Training");
+
+  const [week, setWeek] = React.useState("1");
+  const [country, setCountry] = React.useState("Germany");
+  const [language, setLanguage] = React.useState("EN");
+
   const [thumbnailUrl, setThumbnailUrl] = React.useState("");
   const [description, setDescription] = React.useState("");
 
   const resetForm = () => {
     setTitle("");
+    setDisplayTitle("");
+    setReleaseLabel("");
     setHost("");
     setDate("");
     setTime("");
     setSessionType("Live Training");
+    setWeek("1");
+    setCountry("Germany");
+    setLanguage("EN");
     setThumbnailUrl("");
     setDescription("");
   };
@@ -47,9 +58,18 @@ const ScheduleSessionSlideOver: React.FC<Props> = ({
 
     onCreate({
       title: title.trim(),
-      host: `${host.trim()} (${sessionType})`,
+      displayTitle: displayTitle.trim() || undefined,
+      releaseLabel: releaseLabel.trim() || undefined,
+
+      host: host.trim(),
       date,
       time,
+      sessionType,
+
+      week: Number(week) || 1,
+      country: country.trim() || "Unknown",
+      language: language.trim() || "EN",
+
       thumbnailUrl: thumbnailUrl.trim() || undefined,
       description: description.trim() || undefined,
     });
@@ -67,7 +87,7 @@ const ScheduleSessionSlideOver: React.FC<Props> = ({
       isOpen={isOpen}
       onClose={handleClose}
       title="Schedule New Session"
-      description="Plan a new live training session for your academy."
+      description="Plan a new live academy session localized by country and language."
       footer={
         <>
           <Button variant="secondary" onClick={handleClose}>
@@ -85,10 +105,26 @@ const ScheduleSessionSlideOver: React.FC<Props> = ({
     >
       <div className="space-y-4">
         <TextField
-          label="Session Title"
+          label="Internal Title"
           placeholder="Dribbling Masterclass"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+        />
+
+        <TextField
+          label="Display Title (localized)"
+          placeholder='e.g., "How to improve your passing skills"'
+          value={displayTitle}
+          onChange={(e) => setDisplayTitle(e.target.value)}
+          hint="Optional override shown to end users for this country/language."
+        />
+
+        <TextField
+          label="Release Label (localized)"
+          placeholder="Release Tuesday June 12, 6pm CET"
+          value={releaseLabel}
+          onChange={(e) => setReleaseLabel(e.target.value)}
+          hint="Shown below the video (per country/language)."
         />
 
         <TextField
@@ -106,12 +142,12 @@ const ScheduleSessionSlideOver: React.FC<Props> = ({
             <ToggleChips
               options={typeOptions}
               value={sessionType}
-              onChange={setSessionType}
+              onChange={(v) => setSessionType(v as SessionType)}
             />
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <TextField
             label="Date"
             type="date"
@@ -123,6 +159,28 @@ const ScheduleSessionSlideOver: React.FC<Props> = ({
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+          <TextField
+            label="Week"
+            type="number"
+            min={1}
+            value={week}
+            onChange={(e) => setWeek(e.target.value)}
+          />
+          <TextField
+            label="Country"
+            placeholder="Germany"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+          />
+          <TextField
+            label="Language"
+            placeholder="EN"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
           />
         </div>
 

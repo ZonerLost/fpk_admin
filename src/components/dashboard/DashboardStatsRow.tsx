@@ -6,34 +6,33 @@ type DashboardStatsRowProps = {
   className?: string;
 };
 
-const DashboardStatsRow: React.FC<DashboardStatsRowProps> = ({
-  className,
-}) => {
+const DashboardStatsRow: React.FC<DashboardStatsRowProps> = ({ className }) => {
+  // Mock top-level summary
   const stats = [
     {
-      label: "Total Users",
-      value: "12,456",
-      delta: { value: "+5.2%", direction: "up" as const },
+      label: "Registered Users",
+      value: "11,475",
+      delta: { value: "+4.1%", direction: "up" as const },
     },
     {
-      label: "Active Users",
-      value: "2,102",
-      delta: { value: "+2.8%", direction: "up" as const },
-    },
-    {
-      label: "Pro Subscribers",
+      label: "Pro Users",
       value: "981",
       delta: { value: "+2.1%", direction: "up" as const },
     },
     {
-      label: "Content Uploaded",
-      value: "56",
-      delta: { value: "+15%", direction: "up" as const },
+      label: "Pro Monthly Plan",
+      value: "540",
+      delta: { value: "+1.2%", direction: "up" as const },
     },
     {
-      label: "Live Sessions",
-      value: "12",
-      delta: { value: "+8%", direction: "up" as const },
+      label: "Pro 6-Month Plan",
+      value: "271",
+      delta: { value: "+0.8%", direction: "up" as const },
+    },
+    {
+      label: "Pro 12-Month Plan",
+      value: "170",
+      delta: { value: "+0.6%", direction: "up" as const },
     },
   ];
 

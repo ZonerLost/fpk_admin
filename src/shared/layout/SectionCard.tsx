@@ -1,63 +1,56 @@
 import React from "react";
 import { cn } from "../utils/cn";
 
-export interface SectionCardProps {
+export type SectionCardProps = {
   title?: string;
   subtitle?: string;
-  children: React.ReactNode;
   className?: string;
   contentClassName?: string;
-  /** Optional right-side content in the header (e.g. stats or actions) */
-  headerRight?: React.ReactNode;
-  /** Optional right-side content in the header (e.g. calendar arrows) */
+  children?: React.ReactNode;
   trailing?: React.ReactNode;
-}
+  /**
+   * Backwards-compatible alias used by some chart cards.
+   */
+  headerRight?: React.ReactNode;
+};
 
 const SectionCard: React.FC<SectionCardProps> = ({
   title,
   subtitle,
+  className,
+  contentClassName,
   trailing,
   headerRight,
   children,
-  className,
-  contentClassName,
 }) => {
-  const rightContent = headerRight ?? trailing;
-  const hasHeader = title || subtitle || rightContent;
+  const rightContent = trailing ?? headerRight;
 
   return (
     <section
       className={cn(
-        "rounded-2xl bg-slate-900/80 p-4 shadow-sm ring-1 ring-white/5",
-        "md:p-5",
-        "min-w-0",
+        "rounded-2xl border border-white/5 bg-white/5 p-4",
         className
       )}
     >
-      {hasHeader && (
-        <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-1">
+      {(title || subtitle || rightContent) && (
+        <div className="flex items-start justify-between gap-3">
+          <div>
             {title && (
-              <h2 className="text-sm font-semibold text-slate-50 md:text-base">
+              <h3 className="text-base font-semibold text-white">
                 {title}
-              </h2>
+              </h3>
             )}
             {subtitle && (
-              <p className="text-xs text-slate-400 md:text-sm">
+              <p className="mt-1 text-xs text-slate-400">
                 {subtitle}
               </p>
             )}
           </div>
-
-          {rightContent && (
-            <div className="flex-shrink-0">
-              {rightContent}
-            </div>
-          )}
+          {rightContent && <div className="shrink-0">{rightContent}</div>}
         </div>
       )}
 
-      <div className={cn("mt-1", contentClassName)}>{children}</div>
+      <div className={cn("mt-3", contentClassName)}>{children}</div>
     </section>
   );
 };

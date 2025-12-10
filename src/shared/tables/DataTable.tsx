@@ -1,101 +1,145 @@
 import React from "react";
 import { cn } from "../utils/cn";
 
+export type ColumnAlign = "left" | "center" | "right";
+
 export type Column<T> = {
   id: string;
-  header: string;
-  width?: string;
-  align?: "left" | "right" | "center";
+  header: React.ReactNode;
+  /**
+   * Prefer cell renderer for complex UI.
+   */
   cell?: (row: T) => React.ReactNode;
+  /**
+   * Simple accessor for basic text values.
+   */
   accessor?: keyof T;
+  align?: ColumnAlign;
+  width?: string;
+
+  /**
+   * Optional class hooks for layout control
+   */
+  headerClassName?: string;
+  cellClassName?: string;
 };
 
-export interface DataTableProps<T> {
+type DataTableProps<T> = {
   columns: Column<T>[];
   data: T[];
-  getRowKey: (row: T, index: number) => string | number;
-  className?: string;
+  getRowKey: (row: T, index: number) => string;
+
+  /**
+   * Container styles (no horizontal scroll by default)
+   */
+  containerClassName?: string;
+
+  /**
+   * Row click (optional)
+   */
+  onRowClick?: (row: T) => void;
+};
+
+function isReactNodeValue(val: unknown): val is React.ReactNode {
+  return (
+    val === null ||
+    val === undefined ||
+    typeof val === "string" ||
+    typeof val === "number" ||
+    typeof val === "boolean" ||
+    React.isValidElement(val) ||
+    Array.isArray(val)
+  );
 }
 
-function DataTable<T>({
+function renderCellValue<T>(row: T, col: Column<T>) {
+  if (col.cell) return col.cell(row);
+
+  if (col.accessor) {
+    const value = row[col.accessor];
+
+    // Safe fallback for unknown generic types
+    if (isReactNodeValue(value)) return value;
+    return value === undefined || value === null ? "N/A" : String(value);
+  }
+
+  return "N/A";
+}
+
+export default function DataTable<T>({
   columns,
   data,
   getRowKey,
-  className,
+  containerClassName,
+  onRowClick,
 }: DataTableProps<T>) {
   return (
-    <div
-      className={cn(
-        "w-full overflow-hidden rounded-2xl border border-white/5 bg-black/20",
-        className
-      )}
-    >
-      <div className="w-full overflow-x-auto">
-        <table className="w-full min-w-[640px] divide-y divide-white/5 text-sm">
-          <thead className="bg-white/5">
+    <div className={cn("w-full", containerClassName)}>
+      <table className="w-full table-fixed border-separate border-spacing-0">
+        <thead>
+          <tr className="bg-white/5">
+            {columns.map((col) => (
+              <th
+                key={col.id}
+                className={cn(
+                  "px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-300",
+                  col.align === "center" && "text-center",
+                  col.align === "right" && "text-right",
+                  col.headerClassName
+                )}
+                style={col.width ? { width: col.width } : undefined}
+              >
+                {col.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {data.length === 0 ? (
             <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.id}
-                  className={cn(
-                    "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-300 md:px-4 md:py-3",
-                    col.align === "right" && "text-right",
-                    col.align === "center" && "text-center"
-                  )}
-                  style={col.width ? { width: col.width } : undefined}
-                >
-                  {col.header}
-                </th>
-              ))}
+              <td
+                colSpan={columns.length}
+                className="px-4 py-8 text-center text-sm text-slate-400"
+              >
+                No results
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5 bg-black/10">
-            {data.map((row, idx) => (
+          ) : (
+            data.map((row, idx) => (
               <tr
                 key={getRowKey(row, idx)}
-                className="transition-colors hover:bg-white/5"
+                onClick={() => onRowClick?.(row)}
+                className={cn(
+                  "border-b border-white/5",
+                  onRowClick && "cursor-pointer hover:bg-white/[0.04]"
+                )}
               >
                 {columns.map((col) => {
-                  let content: React.ReactNode = null;
-
-                  if (col.cell) {
-                    content = col.cell(row);
-                  } else if (col.accessor) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    content = (row as any)[col.accessor];
-                  }
+                  const content = renderCellValue(row, col);
 
                   return (
                     <td
                       key={col.id}
                       className={cn(
-                        "px-3 py-2 align-middle text-xs text-slate-100 md:px-4 md:py-3 md:text-sm",
+                        "px-4 py-3 align-middle text-xs text-slate-100 md:text-sm",
+                        "truncate",
+                        col.align === "center" && "text-center",
                         col.align === "right" && "text-right",
-                        col.align === "center" && "text-center"
+                        col.cellClassName
                       )}
+                      style={col.width ? { width: col.width } : undefined}
+                      title={typeof content === "string" ? content : undefined}
                     >
                       {content}
                     </td>
                   );
                 })}
               </tr>
-            ))}
-
-            {data.length === 0 && (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-6 text-center text-xs text-slate-500 md:text-sm"
-                >
-                  No data to display.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            ))
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
-
-export default DataTable;

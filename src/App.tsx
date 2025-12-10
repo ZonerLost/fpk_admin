@@ -1,4 +1,3 @@
-// src/App.tsx
 import React from "react";
 import {
   BrowserRouter,
@@ -11,7 +10,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import DashboardPage from "./pages/dashboard/index";
 import ContentManagementPage from "./pages/content-management/index";
 import UsersPage from "./pages/users/index";
-import LiveSessionsPage from "./pages/live-sessions/index";
+import AcedamySessionsPage from "./pages/Academy-Sessions/index";
 import SettingsPage from "./pages/settings/index";
 import LoginPage from "./pages/auth/LoginPage";
 
@@ -36,7 +35,7 @@ const App: React.FC = () => {
               {/* Other modules */}
               <Route path="/content" element={<ContentManagementPage />} />
               <Route path="/users" element={<UsersPage />} />
-              <Route path="/livesessions" element={<LiveSessionsPage />} />
+              <Route path="/academysessions" element={<AcedamySessionsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>

@@ -3,6 +3,7 @@ import SectionCard from "../../shared/layout/SectionCard";
 import Button from "../../shared/inputs/Button";
 
 type PermissionKey =
+  | "users"
   | "content"
   | "liveSessions"
   | "analytics"
@@ -19,12 +20,13 @@ type Role = {
 };
 
 const PERMISSION_LABELS: Record<PermissionKey, string> = {
+  users: "Access user database",
   content: "Manage content library",
   liveSessions: "Manage live sessions & academy",
   analytics: "View analytics & reports",
-  notifications: "Send messages & push notifications",
-  legal: "Manage localization & legal copy",
-  billing: "Manage plans & billing settings",
+  notifications: "Manage notification configuration",
+  legal: "Manage localization & legal docs",
+  billing: "Manage plans & pricing",
   admins: "Manage admin roles & security",
 };
 
@@ -35,6 +37,7 @@ const AdminRolesSettingsSection: React.FC = () => {
       name: "Super Admin",
       description: "Full access to all features and settings.",
       permissions: {
+        users: true,
         content: true,
         liveSessions: true,
         analytics: true,
@@ -47,8 +50,9 @@ const AdminRolesSettingsSection: React.FC = () => {
     {
       id: "content-manager",
       name: "Content Manager",
-      description: "Can create and manage content and live sessions.",
+      description: "Can create and manage content and academy sessions.",
       permissions: {
+        users: false,
         content: true,
         liveSessions: true,
         analytics: true,
@@ -61,12 +65,13 @@ const AdminRolesSettingsSection: React.FC = () => {
     {
       id: "support",
       name: "Support Agent",
-      description: "Can view users and respond to support issues.",
+      description: "Can access user database for support and view basic analytics.",
       permissions: {
+        users: true,          // ✅ IMPORTANT CHANGE
         content: false,
         liveSessions: false,
         analytics: true,
-        notifications: true,
+        notifications: false,
         legal: false,
         billing: false,
         admins: false,
@@ -101,7 +106,14 @@ const AdminRolesSettingsSection: React.FC = () => {
         subtitle="Control what each admin role is allowed to do."
         className="bg-[#04130d]"
       >
-        <div className="space-y-4">
+        <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-3">
+          <p className="text-xs text-amber-100 md:text-sm">
+            Settings should be accessible to <span className="font-semibold">Super Admin</span> only.
+            Use backend enforcement; this UI reflects intended access.
+          </p>
+        </div>
+
+        <div className="mt-4 space-y-4">
           {roles.map((role) => (
             <div
               key={role.id}
@@ -117,7 +129,7 @@ const AdminRolesSettingsSection: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="grid flex-1 gap-3 text-xs md:grid-cols-2 md:text-sm">
+                <div className="grid flex-1 gap-3 text-xs sm:grid-cols-2 md:text-sm">
                   {(Object.keys(PERMISSION_LABELS) as PermissionKey[]).map(
                     (key) => (
                       <label
@@ -169,9 +181,7 @@ const AdminRolesSettingsSection: React.FC = () => {
               defaultChecked
               className="h-4 w-4 rounded border border-white/20 bg-black/40"
             />
-            <span>
-              Auto-log out admins after 30 minutes of inactivity
-            </span>
+            <span>Auto-log out admins after 30 minutes of inactivity</span>
           </label>
         </div>
       </SectionCard>

@@ -1,10 +1,9 @@
 import React from "react";
-import SelectPill from "../../shared/inputs/SelectPill";
 
 export type UsersFiltersState = {
   role: string;
   country: string;
-  subscription: string;
+  pro: string;
   lastActive: string;
 };
 
@@ -13,54 +12,53 @@ type Props = {
   onChange: (partial: Partial<UsersFiltersState>) => void;
 };
 
+const OPTIONS = {
+  role: ["All", "Registered", "Unregistered"],
+  country: ["All", "Norway", "Spain", "Japan", "Brazil"],
+  pro: ["All", "Active", "Inactive", "None"],
+  lastActive: ["All Time", "24h", "7 days", "30 days"],
+} as const;
+
 const UsersFiltersBar: React.FC<Props> = ({ filters, onChange }) => {
-  // just cycle through demo values for now (you can replace with real dropdowns)
-  const cycle = (key: keyof UsersFiltersState, values: string[]) => {
-    const current = filters[key];
-    const idx = values.indexOf(current);
-    const next = values[(idx + 1) % values.length];
-    onChange({ [key]: next });
+  const renderSelect = (
+    key: keyof UsersFiltersState,
+    label: string,
+    options: readonly string[]
+  ) => {
+    const id = `filter-${key}`;
+    return (
+      <div className="flex min-w-[140px] flex-1 flex-col gap-1">
+        <label
+          htmlFor={id}
+          className="text-[11px] font-medium text-white/70 md:text-xs"
+        >
+          {label}
+        </label>
+        <select
+          id={id}
+          value={filters[key]}
+          onChange={(e) => onChange({ [key]: e.target.value })}
+          className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2.5 text-[11px] text-slate-100 outline-none ring-emerald-500/40 focus:ring sm:h-10 sm:text-xs md:text-sm"
+          aria-label={label}
+        >
+          {options.map((opt) => (
+            <option key={opt} value={opt} className="bg-black">
+              {opt}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
   };
 
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:items-center">
-      <div className="flex flex-1 flex-wrap gap-2 text-xs md:text-sm">
-        <SelectPill
-          label="Role"
-          valueLabel={filters.role}
-          onClick={() =>
-            cycle("role", ["All", "Pro", "Basic", "Unregistered"])
-          }
-        />
-        <SelectPill
-          label="Country"
-          valueLabel={filters.country}
-          onClick={() =>
-            cycle("country", ["All", "Norway", "Spain", "Japan", "Brazil"])
-          }
-        />
-        <SelectPill
-          label="Subscription"
-          valueLabel={filters.subscription}
-          onClick={() =>
-            cycle("subscription", ["All", "Active", "Inactive"])
-          }
-        />
-        <SelectPill
-          label="Last Active"
-          valueLabel={filters.lastActive}
-          onClick={() =>
-            cycle("lastActive", [
-              "All Time",
-              "24h",
-              "7 days",
-              "30 days",
-            ])
-          }
-        />
+    <div className="w-full">
+      <div className="grid w-full grid-cols-2 gap-2 rounded-xl bg-white/5 p-2.5 text-xs sm:grid-cols-2 md:grid-cols-4 md:gap-3 md:p-3 md:text-sm">
+        {renderSelect("role", "Status", OPTIONS.role)}
+        {renderSelect("country", "Country", OPTIONS.country)}
+        {renderSelect("pro", "Pro", OPTIONS.pro)}
+        {renderSelect("lastActive", "Last Active", OPTIONS.lastActive)}
       </div>
-
-      {/* right side is controlled in TableToolbar.actions (icons + Apply Filters) */}
     </div>
   );
 };

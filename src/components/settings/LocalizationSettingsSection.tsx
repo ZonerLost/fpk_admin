@@ -3,64 +3,92 @@ import SectionCard from "../../shared/layout/SectionCard";
 import TextField from "../../shared/inputs/TextField";
 import Button from "../../shared/inputs/Button";
 
-type CountryLocale = {
+type LegalDocRow = {
   id: string;
   country: string;
-  defaultLanguage: string;
-  languages: string;
-  currency: string;
+  language: string;
+  privacyPolicyUrl: string;
+  termsUrl: string;
 };
 
-const LocalizationSettingsSection: React.FC = () => {
-  const [rows, setRows] = React.useState<CountryLocale[]>([
-    {
-      id: "no",
-      country: "Norway",
-      defaultLanguage: "Norwegian",
-      languages: "Norwegian, English",
-      currency: "NOK",
-    },
-    {
-      id: "uk",
-      country: "United Kingdom",
-      defaultLanguage: "English",
-      languages: "English",
-      currency: "GBP",
-    },
-    {
-      id: "es",
-      country: "Spain",
-      defaultLanguage: "Spanish",
-      languages: "Spanish, English",
-      currency: "EUR",
-    },
-  ]);
+const seedRows: LegalDocRow[] = [
+  {
+    id: "de-en",
+    country: "Germany",
+    language: "EN",
+    privacyPolicyUrl: "",
+    termsUrl: "",
+  },
+  {
+    id: "de-de",
+    country: "Germany",
+    language: "DE",
+    privacyPolicyUrl: "",
+    termsUrl: "",
+  },
+  {
+    id: "us-en",
+    country: "USA",
+    language: "EN",
+    privacyPolicyUrl: "",
+    termsUrl: "",
+  },
+];
 
-  const updateRow = (id: string, patch: Partial<CountryLocale>) => {
+const LocalizationSettingsSection: React.FC = () => {
+  const [rows, setRows] = React.useState<LegalDocRow[]>(seedRows);
+
+  const updateRow = (id: string, patch: Partial<LegalDocRow>) => {
     setRows((prev) =>
       prev.map((row) => (row.id === id ? { ...row, ...patch } : row))
     );
   };
 
+  const addRow = () => {
+    const id = `row-${Date.now()}`;
+    setRows((prev) => [
+      ...prev,
+      {
+        id,
+        country: "New Country",
+        language: "EN",
+        privacyPolicyUrl: "",
+        termsUrl: "",
+      },
+    ]);
+  };
+
+  const removeRow = (id: string) => {
+    setRows((prev) => prev.filter((r) => r.id !== id));
+  };
+
   const handleSave = () => {
-    console.log("Localization settings", rows);
+    console.log("Legal docs by locale", rows);
   };
 
   return (
     <div className="space-y-6">
       <SectionCard
-        title="Country & Language Matrix"
-        subtitle="Define supported languages, currencies, and defaults per country."
+        title="Legal Documents by Country & Language"
+        subtitle="Link Privacy Policy and Terms & Conditions for each app-store country and language version."
         className="bg-[#04130d]"
       >
-        <div className="overflow-x-auto rounded-2xl border border-white/10">
+        <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-3">
+          <p className="text-xs text-emerald-100 md:text-sm">
+            This is a critical requirement. Ensure backend enforcement and app-side
+            locale mapping when wiring APIs.
+          </p>
+        </div>
+
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
           <table className="min-w-full text-left text-xs text-slate-100 md:text-sm">
             <thead className="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
               <tr>
                 <th className="px-4 py-3">Country</th>
-                <th className="px-4 py-3">Default Language</th>
-                <th className="px-4 py-3">Languages Enabled</th>
-                <th className="px-4 py-3">Currency</th>
+                <th className="px-4 py-3">Language</th>
+                <th className="px-4 py-3">Privacy Policy URL</th>
+                <th className="px-4 py-3">Terms & Conditions URL</th>
+                <th className="px-4 py-3 w-24">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -78,35 +106,44 @@ const LocalizationSettingsSection: React.FC = () => {
                   </td>
                   <td className="px-4 py-3">
                     <TextField
-                      label="Default Language"
+                      label="Language"
                       hideLabel
-                      value={row.defaultLanguage}
+                      value={row.language}
                       onChange={(e) =>
-                        updateRow(row.id, {
-                          defaultLanguage: e.target.value,
-                        })
+                        updateRow(row.id, { language: e.target.value })
                       }
                     />
                   </td>
                   <td className="px-4 py-3">
                     <TextField
-                      label="Languages"
+                      label="Privacy URL"
                       hideLabel
-                      value={row.languages}
+                      placeholder="https://..."
+                      value={row.privacyPolicyUrl}
                       onChange={(e) =>
-                        updateRow(row.id, { languages: e.target.value })
+                        updateRow(row.id, { privacyPolicyUrl: e.target.value })
                       }
                     />
                   </td>
                   <td className="px-4 py-3">
                     <TextField
-                      label="Currency"
+                      label="Terms URL"
                       hideLabel
-                      value={row.currency}
+                      placeholder="https://..."
+                      value={row.termsUrl}
                       onChange={(e) =>
-                        updateRow(row.id, { currency: e.target.value })
+                        updateRow(row.id, { termsUrl: e.target.value })
                       }
                     />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Button
+                      variant="secondary"
+                      className="rounded-lg border border-white/10 bg-transparent px-3 py-1 text-xs hover:bg-white/10"
+                      onClick={() => removeRow(row.id)}
+                    >
+                      Remove
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -114,23 +151,19 @@ const LocalizationSettingsSection: React.FC = () => {
           </table>
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            variant="secondary"
+            className="rounded-lg border border-white/10 bg-transparent hover:bg-white/10"
+            onClick={addRow}
+          >
+            + Add Locale Row
+          </Button>
+
           <Button variant="primary" onClick={handleSave}>
             Save Changes
           </Button>
         </div>
-      </SectionCard>
-
-      <SectionCard
-        title="Legal Documents"
-        subtitle="Track the latest Terms of Service & Privacy Policy versions per locale."
-        className="bg-[#04130d]"
-      >
-        <p className="text-xs text-slate-400 md:text-sm">
-          For MVP you can manually update legal copy in the app store / website.
-          Later this card can evolve into a versioned list with upload support
-          for each country and language.
-        </p>
       </SectionCard>
     </div>
   );

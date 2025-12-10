@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", to: "/", icon: FiGrid },
   { label: "Content Management", to: "/content", icon: FiFileText },
   { label: "Users", to: "/users", icon: FiUsers },
-  { label: "Live Sessions", to: "/livesessions", icon: FiBarChart2 },
+  { label: "Academy Sessions", to: "/academysessions", icon: FiBarChart2 },
   { label: "Settings", to: "/settings", icon: FiSettings },
 ];
 
@@ -37,7 +37,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [isLogoutOpen, setIsLogoutOpen] = React.useState(false);
 
   const handleLogoutClick = () => {
-    setIsLogoutOpen(true);
+    onClose(); // close sidebar first (especially on mobile)
+    setTimeout(() => setIsLogoutOpen(true), 0);
   };
 
   const handleConfirmLogout = () => {
@@ -73,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-[#000000] font-bold text-slate-200 shadow-xl transition-transform duration-200 md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 flex-col bg-[#000000] font-bold text-slate-200 shadow-xl transition-transform duration-200 md:static md:h-auto md:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -119,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </nav>
 
         {/* Logout at bottom */}
-        <div className="border-t border-white/5 px-3 py-3">
+        <div className="mt-auto border-t border-white/5 px-3 py-3">
           <button
             type="button"
             onClick={handleLogoutClick}

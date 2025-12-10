@@ -1,4 +1,3 @@
-// src/context/AuthContext.tsx
 import React, {
   createContext,
   useContext,
@@ -58,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           user: parsed.user ?? null,
         });
       }
-    } catch (err) {
+        } catch (err) {
       console.error("Failed to read auth from storage", err);
     }
   }, []);

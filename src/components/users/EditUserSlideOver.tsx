@@ -8,7 +8,8 @@ import type { ProStatus, UserItem, UserRole } from "./types";
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (payload: Omit<UserItem, "id">) => void;
+  user: UserItem | null;
+  onUpdate: (id: string, updates: Partial<Omit<UserItem, "id">>) => void;
 };
 
 const roleOptions: ToggleOption[] = [
@@ -22,7 +23,12 @@ const proOptions: ToggleOption[] = [
   { value: "None", label: "None" },
 ];
 
-const AddUserSlideOver: React.FC<Props> = ({ isOpen, onClose, onCreate }) => {
+const EditUserSlideOver: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  user,
+  onUpdate,
+}) => {
   const [userId, setUserId] = React.useState("USR-0000");
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -35,8 +41,24 @@ const AddUserSlideOver: React.FC<Props> = ({ isOpen, onClose, onCreate }) => {
   const [xpPoints, setXpPoints] = React.useState("0");
   const [avatarUrl, setAvatarUrl] = React.useState("");
 
-  // ✅ keep state consistent:
-  // Unregistered users can't be Pro
+  // Prefill on open/user change
+  React.useEffect(() => {
+    if (!user || !isOpen) return;
+
+    setUserId(user.userId || "USR-0000");
+    setName(user.name || "");
+    setEmail(user.email || "");
+    setPhone(user.phone || "");
+    setCountry(user.country || "");
+
+    setRole(user.role);
+    setProStatus(user.proStatus);
+
+    setXpPoints(String(user.xpPoints ?? 0));
+    setAvatarUrl(user.avatarUrl || "");
+  }, [user, isOpen]);
+
+  // Keep state consistent: Unregistered can't be Pro
   React.useEffect(() => {
     if (role === "Unregistered" && proStatus !== "None") {
       setProStatus("None");
@@ -46,23 +68,12 @@ const AddUserSlideOver: React.FC<Props> = ({ isOpen, onClose, onCreate }) => {
     }
   }, [role, proStatus]);
 
-  const resetForm = () => {
-    setUserId("USR-0000");
-    setName("");
-    setEmail("");
-    setPhone("");
-    setCountry("");
-    setRole("Registered");
-    setProStatus("Inactive");
-    setXpPoints("0");
-    setAvatarUrl("");
-  };
-
   const handleSubmit = () => {
+    if (!user) return;
     if (!name.trim()) return;
 
-    onCreate({
-      userId: userId.trim() || "USR-0000",
+    onUpdate(user.id, {
+      userId: userId.trim() || user.userId,
       name: name.trim(),
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
@@ -71,34 +82,28 @@ const AddUserSlideOver: React.FC<Props> = ({ isOpen, onClose, onCreate }) => {
       proStatus,
       xpPoints: Number(xpPoints) || 0,
       avatarUrl: avatarUrl.trim() || undefined,
-      lastActive: "just now",
     });
 
-    resetForm();
-  };
-
-  const handleClose = () => {
-    resetForm();
     onClose();
   };
 
   return (
     <SlideOver
       isOpen={isOpen}
-      onClose={handleClose}
-      title="Add New User"
-      description="Create a user profile with account status and Pro state."
+      onClose={onClose}
+      title="Edit User"
+      description="Update user profile, account status and Pro state."
       footer={
         <>
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={!name.trim()}
+            disabled={!name.trim() || !user}
           >
-            Save User
+            Save Changes
           </Button>
         </>
       }
@@ -140,7 +145,7 @@ const AddUserSlideOver: React.FC<Props> = ({ isOpen, onClose, onCreate }) => {
           placeholder="Country"
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          hint="Ideally derived from App Store / Play Store country; backend should own this."
+          hint="Ideally derived from store country; backend should own this."
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -192,5 +197,4 @@ const AddUserSlideOver: React.FC<Props> = ({ isOpen, onClose, onCreate }) => {
   );
 };
 
-export default AddUserSlideOver;
-
+export default EditUserSlideOver;
