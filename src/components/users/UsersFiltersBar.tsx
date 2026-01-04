@@ -1,8 +1,9 @@
 import React from "react";
+import { COUNTRIES, LANGUAGES } from "../../shared/constant/geo";
 
 export type UsersFiltersState = {
-  role: string;
   country: string;
+  language: string;
   pro: string;
   lastActive: string;
 };
@@ -13,9 +14,9 @@ type Props = {
 };
 
 const OPTIONS = {
-  role: ["All", "Registered", "Unregistered"],
-  country: ["All", "Norway", "Spain", "Japan", "Brazil"],
-  pro: ["All", "Active", "Inactive", "None"],
+  country: ["All", ...COUNTRIES],
+  language: ["All", ...LANGUAGES],
+  pro: ["All", "Active", "Lapsed", "None"],
   lastActive: ["All Time", "24h", "7 days", "30 days"],
 } as const;
 
@@ -28,10 +29,7 @@ const UsersFiltersBar: React.FC<Props> = ({ filters, onChange }) => {
     const id = `filter-${key}`;
     return (
       <div className="flex min-w-[140px] flex-1 flex-col gap-1">
-        <label
-          htmlFor={id}
-          className="text-[11px] font-medium text-white/70 md:text-xs"
-        >
+        <label htmlFor={id} className="text-[11px] font-medium text-white/70 md:text-xs">
           {label}
         </label>
         <select
@@ -54,8 +52,8 @@ const UsersFiltersBar: React.FC<Props> = ({ filters, onChange }) => {
   return (
     <div className="w-full">
       <div className="grid w-full grid-cols-2 gap-2 rounded-xl bg-white/5 p-2.5 text-xs sm:grid-cols-2 md:grid-cols-4 md:gap-3 md:p-3 md:text-sm">
-        {renderSelect("role", "Status", OPTIONS.role)}
         {renderSelect("country", "Country", OPTIONS.country)}
+        {renderSelect("language", "Language", OPTIONS.language)}
         {renderSelect("pro", "Pro", OPTIONS.pro)}
         {renderSelect("lastActive", "Last Active", OPTIONS.lastActive)}
       </div>

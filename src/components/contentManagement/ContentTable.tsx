@@ -8,6 +8,7 @@ import Button from "../../shared/inputs/Button";
 import ConfirmDialog from "../../shared/overlay/ConfirmDialog";
 import type { ContentItem } from "./types";
 import ContentDetailsSlideOver from "./ContentDetailSlideOver";
+import { normalizePurposeLabel } from "./content.constants";
 
 type Props = {
   items: ContentItem[];
@@ -25,20 +26,24 @@ const ContentTable: React.FC<Props> = ({ items, onEdit, onDelete }) => {
       header: "Thumbnail",
       width: "5rem",
       cell: (row) => (
-        <Avatar
-          src={row.thumbnailUrl}
-          name={row.title}
-          variant="rounded"
-          size="lg"
-        />
+        <Avatar src={row.thumbnailUrl} name={row.title} variant="rounded" size="lg" />
       ),
     },
     {
-      id: "purpose",
-      header: "Purpose",
-      width: "9rem",
+      id: "contentId",
+      header: "Content ID",
+      width: "7.5rem",
+      cell: (row) => <span className="font-mono text-xs text-slate-200">{row.contentId}</span>,
+    },
+    {
+      id: "title",
+      header: "Title",
+      width: "18rem",
       cell: (row) => (
-        <Badge variant="neutral">{row.purpose ?? "content"}</Badge>
+        <div className="min-w-0">
+          <div className="truncate text-sm text-slate-100">{row.title}</div>
+          {row.groupKey && <div className="truncate text-[11px] text-slate-400">{row.groupKey}</div>}
+        </div>
       ),
     },
     {
@@ -54,38 +59,44 @@ const ContentTable: React.FC<Props> = ({ items, onEdit, onDelete }) => {
       cell: (row) => <TagPill>{row.category}</TagPill>,
     },
     {
-      id: "countryLang",
-      header: "Country / Lang",
-      width: "9rem",
-      cell: (row) => (
-        <div className="flex flex-col gap-1 text-xs">
-          <span className="text-slate-200">{row.country}</span>
-          <span className="text-slate-400">{row.language}</span>
-        </div>
-      ),
+      id: "purpose",
+      header: "Purpose",
+      width: "10rem",
+      cell: (row) => <Badge variant="neutral">{normalizePurposeLabel(row.purpose)}</Badge>,
     },
     {
-      id: "week",
-      header: "Week",
-      width: "4rem",
-      align: "center",
-      cell: (row) => <span>{row.week}</span>,
+      id: "country",
+      header: "Country",
+      width: "8rem",
+      cell: (row) => <span className="text-xs text-slate-200">{row.country}</span>,
     },
     {
-      id: "position",
-      header: "Position",
-      width: "7rem",
+      id: "language",
+      header: "Language",
+      width: "6rem",
+      cell: (row) => <span className="text-xs text-slate-200">{row.language}</span>,
+    },
+    {
+      id: "monthWeek",
+      header: "M / W / Pos",
+      width: "8rem",
       align: "center",
       cell: (row) => (
         <span className="text-xs text-slate-200">
-          W{row.week} #{row.positionInWeek}
+          M{row.month} · W{row.week} · #{row.positionInWeek}
         </span>
       ),
     },
     {
+      id: "access",
+      header: "Access",
+      width: "6rem",
+      cell: (row) => <TagPill>{row.access}</TagPill>,
+    },
+    {
       id: "status",
       header: "Status",
-      width: "8rem",
+      width: "9rem",
       align: "right",
       cell: (row) => {
         const label =
@@ -106,9 +117,7 @@ const ContentTable: React.FC<Props> = ({ items, onEdit, onDelete }) => {
           <div className="flex flex-col items-end gap-1">
             <Badge variant={variant}>{label}</Badge>
             {row.status === "scheduled" && row.publishAt && (
-              <span className="text-[10px] text-slate-400">
-                {row.publishAt}
-              </span>
+              <span className="text-[10px] text-slate-400">{row.publishAt}</span>
             )}
           </div>
         );
@@ -135,7 +144,6 @@ const ContentTable: React.FC<Props> = ({ items, onEdit, onDelete }) => {
 
   return (
     <>
-      {/* Delete confirm */}
       <ConfirmDialog
         isOpen={!!toDelete}
         title="Delete content?"
@@ -154,7 +162,6 @@ const ContentTable: React.FC<Props> = ({ items, onEdit, onDelete }) => {
         }}
       />
 
-      {/* Details (single source of truth for actions) */}
       <ContentDetailsSlideOver
         isOpen={!!selected}
         item={selected}

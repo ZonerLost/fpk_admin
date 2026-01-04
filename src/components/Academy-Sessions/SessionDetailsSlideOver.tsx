@@ -2,7 +2,7 @@ import React from "react";
 import SlideOver from "../../shared/overlay/SlideOver";
 import Badge from "../../shared/data-display/Badge";
 import Button from "../../shared/inputs/Button";
-import type { SessionItem } from "./types";
+import type { SessionItem } from "./types/types";
 
 type Props = {
   isOpen: boolean;

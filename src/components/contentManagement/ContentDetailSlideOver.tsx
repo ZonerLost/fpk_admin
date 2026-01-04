@@ -5,13 +5,13 @@ import TagPill from "../../shared/data-display/TagPill";
 import Badge from "../../shared/data-display/Badge";
 import Avatar from "../../shared/data-display/Avatar";
 import type { ContentItem } from "./types";
+import { normalizePurposeLabel } from "./content.constants";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
   item: ContentItem | null;
 
-  /** Actions now live here */
   onEdit: (item: ContentItem) => void;
   onDeleteRequest: (item: ContentItem) => void;
 };
@@ -61,10 +61,7 @@ const ContentDetailsSlideOver: React.FC<Props> = ({
             Close
           </Button>
 
-          <Button
-            variant="secondary"
-            onClick={() => onEdit(item)}
-          >
+          <Button variant="secondary" onClick={() => onEdit(item)}>
             Edit / Replace
           </Button>
 
@@ -80,7 +77,6 @@ const ContentDetailsSlideOver: React.FC<Props> = ({
       }
     >
       <div className="space-y-5">
-        {/* Header block */}
         <div className="flex items-start gap-3">
           <Avatar
             src={item.thumbnailUrl}
@@ -89,8 +85,10 @@ const ContentDetailsSlideOver: React.FC<Props> = ({
             size="lg"
           />
           <div className="min-w-0">
-            <div className="text-lg font-semibold text-white">
-              {item.title}
+            <div className="text-lg font-semibold text-white">{item.title}</div>
+
+            <div className="mt-1 text-xs text-slate-400">
+              Content ID: <span className="font-mono text-slate-200">{item.contentId}</span>
             </div>
 
             {item.groupKey && (
@@ -102,61 +100,35 @@ const ContentDetailsSlideOver: React.FC<Props> = ({
             <div className="mt-2 flex flex-wrap gap-2">
               <Badge variant="neutral">{item.type}</Badge>
               <TagPill>{item.category}</TagPill>
+              <TagPill>{normalizePurposeLabel(item.purpose)}</TagPill>
               <TagPill>{item.access}</TagPill>
               <Badge variant={statusVariant}>{statusLabel}</Badge>
             </div>
           </div>
         </div>
 
-        {/* Grid of details */}
         <div className="grid gap-3 rounded-xl border border-white/5 bg-white/5 p-4 sm:grid-cols-2">
-          <Detail label="Purpose" value={item.purpose ?? "content"} />
-          <Detail
-            label="Week / Position"
-            value={`Week ${item.week} / #${item.positionInWeek}`}
-          />
+          <Detail label="Month / Week / Position" value={`M${item.month} · W${item.week} · #${item.positionInWeek}`} />
           <Detail label="Country" value={item.country} />
           <Detail label="Language" value={item.language} />
 
-          <Detail
-            label="Access"
-            value={item.access}
-          />
-
-          <Detail
-            label="Free for Registered"
-            value={item.isFreeForRegistered ? "Yes" : "No"}
-          />
-          <Detail
-            label="Free for Academy"
-            value={item.isAcademyFreeForRegistered ? "Yes" : "No"}
-          />
+          <Detail label="Free for everyone" value={item.isFreeForEveryone ? "Yes" : "No"} />
+          <Detail label="Free for registered" value={item.isFreeForRegistered ? "Yes" : "No"} />
+          <Detail label="Free for academy" value={item.isAcademyFreeForRegistered ? "Yes" : "No"} />
 
           <Detail label="Upload Type" value={item.sourceType} />
           <Detail label="Source" value={sourceDisplay} />
 
-          <Detail
-            label="Deletable"
-            value={deletable ? "Yes" : "No (Locked)"}
-          />
+          <Detail label="Deletable" value={deletable ? "Yes" : "No (Locked)"} />
+          <Detail label="Status" value={statusLabel} />
 
-          <Detail
-            label="Status"
-            value={statusLabel}
-          />
-
-          {publishDisplay && (
-            <Detail label="Publish At" value={publishDisplay} />
-          )}
+          {publishDisplay && <Detail label="Publish At" value={publishDisplay} />}
         </div>
 
-        {/* Tags */}
         <div>
           <div className="text-xs font-semibold text-slate-300">Tags</div>
           <div className="mt-2 flex flex-wrap gap-1">
-            {item.tags?.length ? (
-              item.tags.map((t) => <TagPill key={t}>{t}</TagPill>)
-            ) : (
+            {item.tags?.length ? item.tags.map((t) => <TagPill key={t}>{t}</TagPill>) : (
               <span className="text-xs text-slate-500">No tags</span>
             )}
           </div>
@@ -166,14 +138,9 @@ const ContentDetailsSlideOver: React.FC<Props> = ({
   );
 };
 
-const Detail: React.FC<{ label: string; value: React.ReactNode }> = ({
-  label,
-  value,
-}) => (
+const Detail: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div>
-    <div className="text-[10px] uppercase tracking-wide text-slate-400">
-      {label}
-    </div>
+    <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
     <div className="mt-1 text-sm text-slate-100">{value}</div>
   </div>
 );

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
@@ -42,14 +41,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   const handleConfirmLogout = () => {
-    logout();             // clear auth + storage
+    logout(); // clear auth + storage
     setIsLogoutOpen(false);
-    onClose();            // close sidebar on mobile
+    onClose(); // close sidebar on mobile
     navigate("/login", { replace: true });
   };
 
   const handleCancelLogout = () => {
     setIsLogoutOpen(false);
+  };
+
+  // Close sidebar only on mobile when clicking a nav item
+  const handleNavClick = () => {
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      onClose();
+    }
   };
 
   return (
@@ -74,13 +80,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 flex-col bg-[#000000] font-bold text-slate-200 shadow-xl transition-transform duration-200 md:static md:h-auto md:translate-x-0 ${
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 flex-col bg-[#000000] font-bold text-slate-200 shadow-xl transition-transform duration-200
+        ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         {/* Brand */}
         <div className="flex items-center gap-3 border-b border-white/5 px-4 py-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/40 overflow-hidden">
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-black/40">
             <img
               src="/images/logo.png"
               alt="GDS Sport logo"
@@ -93,8 +98,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Nav items */}
-        <nav className="mt-4 flex-1 space-y-1 px-3">
+        {/* Nav items (scrollable inside sidebar if long) */}
+        <nav className="mt-4 flex-1 space-y-1 overflow-y-auto px-3 pb-3">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -110,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       : "text-slate-300 hover:bg-white/5",
                   ].join(" ")
                 }
-                onClick={onClose}
+                onClick={handleNavClick}
               >
                 <Icon className="h-5 w-5" />
                 <span>{item.label}</span>

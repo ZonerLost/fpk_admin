@@ -3,20 +3,25 @@ import SectionCard from "../../shared/layout/SectionCard";
 import DataTable, { type Column } from "../../shared/tables/DataTable";
 import Badge from "../../shared/data-display/Badge";
 import Button from "../../shared/inputs/Button";
-import type { RecordingItem } from "./types/types";
+import type { AcademyContentItem } from "./types/types";
+import { formatReleaseDisplay } from "./utils/academy.utils";
 
 type Props = {
-  recordings: RecordingItem[];
-  onView: (row: RecordingItem) => void;
+  title: string;
+  subtitle?: string;
+  rows: AcademyContentItem[];
+  onView: (row: AcademyContentItem) => void;
   onRemove?: (id: string) => void;
 };
 
-const AcademyRecordingsTable: React.FC<Props> = ({
-  recordings,
-  onView,
-  onRemove,
-}) => {
-  const columns: Column<RecordingItem>[] = [
+const AcademyContentTable: React.FC<Props> = ({ title, subtitle, rows, onView, onRemove }) => {
+  const columns: Column<AcademyContentItem>[] = [
+    {
+      id: "contentId",
+      header: "Content ID",
+      width: "9rem",
+      cell: (row) => <span className="text-xs text-slate-100 md:text-sm">{row.contentId}</span>,
+    },
     {
       id: "title",
       header: "Title",
@@ -25,18 +30,16 @@ const AcademyRecordingsTable: React.FC<Props> = ({
           <span className="block truncate text-sm font-medium text-slate-100">
             {row.displayTitle || row.title}
           </span>
-          {row.releaseLabel && (
-            <span className="block truncate text-[10px] text-emerald-200">
-              {row.releaseLabel}
-            </span>
-          )}
+          <span className="block truncate text-[10px] text-slate-400">
+            Hosted by {row.host}
+          </span>
         </div>
       ),
     },
     {
-      id: "countryLang",
+      id: "locale",
       header: "Country / Lang",
-      width: "10rem",
+      width: "11rem",
       cell: (row) => (
         <div className="text-xs text-slate-200 md:text-sm">
           <div>{row.country}</div>
@@ -47,7 +50,7 @@ const AcademyRecordingsTable: React.FC<Props> = ({
     {
       id: "weekPos",
       header: "Week / Pos",
-      width: "7.5rem",
+      width: "8rem",
       align: "center",
       cell: (row) => (
         <span className="text-xs text-slate-100 md:text-sm">
@@ -56,27 +59,28 @@ const AcademyRecordingsTable: React.FC<Props> = ({
       ),
     },
     {
-      id: "access",
-      header: "Access",
-      width: "7rem",
-      cell: (row) => {
-        const variant =
-          row.access === "Pro"
-            ? "success"
-            : row.access === "Registered"
-            ? "neutral"
-            : "warning";
-        return <Badge variant={variant}>{row.access}</Badge>;
-      },
+      id: "release",
+      header: "Release (Local)",
+      width: "16rem",
+      cell: (row) => (
+        <span className="text-xs text-slate-200 md:text-sm">
+          {formatReleaseDisplay(row.country, row.releaseDate, row.releaseTime)}
+        </span>
+      ),
     },
     {
-      id: "section",
-      header: "Section",
+      id: "access",
+      header: "Access",
       width: "9rem",
       cell: (row) => (
-        <Badge variant="neutral">
-          {row.bucket === "currentWeek" ? "Current Week" : "Past"}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={row.access === "Pro" ? "success" : "neutral"}>
+            {row.access}
+          </Badge>
+          {row.freeForRegistered && (
+            <Badge variant="warning">Free (Registered)</Badge>
+          )}
+        </div>
       ),
     },
     {
@@ -110,19 +114,19 @@ const AcademyRecordingsTable: React.FC<Props> = ({
 
   return (
     <SectionCard
-      title="Academy Content List"
-      subtitle="Admin list for current-week + past recordings, localized by country & language."
+      title={title}
+      subtitle={subtitle}
       className="bg-[#04130d]"
       contentClassName="p-0"
     >
       <DataTable
         columns={columns}
-        data={recordings}
+        data={rows}
         getRowKey={(row) => row.id}
-        containerClassName="max-w-full overflow-x-auto scrollbar-thin"
+        containerClassName="max-w-full overflow-x-auto no-scrollbar"
       />
     </SectionCard>
   );
 };
 
-export default AcademyRecordingsTable;
+export default AcademyContentTable;

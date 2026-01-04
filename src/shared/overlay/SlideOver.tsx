@@ -10,6 +10,7 @@ type SlideOverProps = {
   footer?: React.ReactNode;
   position?: "right" | "left";
   widthClassName?: string; // override width if needed
+  contentClassName?: string; // custom classes for scrollable body
 };
 
 const SlideOver: React.FC<SlideOverProps> = ({
@@ -21,6 +22,7 @@ const SlideOver: React.FC<SlideOverProps> = ({
   footer,
   position = "right",
   widthClassName,
+  contentClassName,
 }) => {
   // Lock background scroll while the slide-over is open
   React.useEffect(() => {
@@ -75,7 +77,7 @@ const SlideOver: React.FC<SlideOverProps> = ({
         )}
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className={cn("flex-1 overflow-y-auto px-5 py-4", contentClassName)}>
           {children}
         </div>
 

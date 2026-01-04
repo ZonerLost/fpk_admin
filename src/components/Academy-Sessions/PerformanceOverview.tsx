@@ -15,12 +15,12 @@ const PerformanceOverview: React.FC = () => {
         className="bg-transparent border border-white/5"
       />
       <StatCard
-        label="Average Live Attendance"
+        label="Average Views per Release"
         value="128"
         className="bg-transparent border border-white/5"
       />
       <StatCard
-        label="Top Performing Session"
+        label="Top Performing Content"
         value="Defensive Positioning"
         className="bg-transparent border border-white/5"
       />

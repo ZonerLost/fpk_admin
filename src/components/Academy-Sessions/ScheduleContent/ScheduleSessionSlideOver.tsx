@@ -1,9 +1,9 @@
 import React from "react";
-import SlideOver from "../../shared/overlay/SlideOver";
-import TextField from "../../shared/inputs/TextField";
-import ToggleChips, { type ToggleOption } from "../../shared/inputs/ToggleChips";
-import Button from "../../shared/inputs/Button";
-import type { SessionItem, SessionType } from "./types";
+import SlideOver from "../../../shared/overlay/SlideOver";
+import TextField from "../../../shared/inputs/TextField";
+import ToggleChips, { type ToggleOption } from "../../../shared/inputs/ToggleChips";
+import Button from "../../../shared/inputs/Button";
+import type { SessionItem, SessionType } from "../types/types";
 
 type Props = {
   isOpen: boolean;

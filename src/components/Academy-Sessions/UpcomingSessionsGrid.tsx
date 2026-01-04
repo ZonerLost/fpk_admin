@@ -2,7 +2,7 @@ import React from "react";
 import SectionCard from "../../shared/layout/SectionCard";
 import Button from "../../shared/inputs/Button";
 import Badge from "../../shared/data-display/Badge";
-import type { SessionItem } from "./types";
+import type { SessionItem } from "./types/types";
 import { cn } from "../../shared/utils/cn";
 
 type Props = {

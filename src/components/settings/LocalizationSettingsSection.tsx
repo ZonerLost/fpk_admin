@@ -2,6 +2,7 @@ import React from "react";
 import SectionCard from "../../shared/layout/SectionCard";
 import TextField from "../../shared/inputs/TextField";
 import Button from "../../shared/inputs/Button";
+import { COUNTRY_CATALOG } from "../../shared/constants/locale";
 
 type LegalDocRow = {
   id: string;
@@ -11,55 +12,27 @@ type LegalDocRow = {
   termsUrl: string;
 };
 
-const seedRows: LegalDocRow[] = [
-  {
-    id: "de-en",
-    country: "Germany",
-    language: "EN",
-    privacyPolicyUrl: "",
-    termsUrl: "",
-  },
-  {
-    id: "de-de",
-    country: "Germany",
-    language: "DE",
-    privacyPolicyUrl: "",
-    termsUrl: "",
-  },
-  {
-    id: "us-en",
-    country: "USA",
-    language: "EN",
-    privacyPolicyUrl: "",
-    termsUrl: "",
-  },
-];
-
-const LocalizationSettingsSection: React.FC = () => {
-  const [rows, setRows] = React.useState<LegalDocRow[]>(seedRows);
-
-  const updateRow = (id: string, patch: Partial<LegalDocRow>) => {
-    setRows((prev) =>
-      prev.map((row) => (row.id === id ? { ...row, ...patch } : row))
-    );
-  };
-
-  const addRow = () => {
-    const id = `row-${Date.now()}`;
-    setRows((prev) => [
-      ...prev,
-      {
-        id,
-        country: "New Country",
-        language: "EN",
+function buildSeedRows(): LegalDocRow[] {
+  const rows: LegalDocRow[] = [];
+  for (const c of COUNTRY_CATALOG) {
+    for (const lang of c.languages) {
+      rows.push({
+        id: `${c.id}-${lang}`,
+        country: c.country,
+        language: lang,
         privacyPolicyUrl: "",
         termsUrl: "",
-      },
-    ]);
-  };
+      });
+    }
+  }
+  return rows;
+}
 
-  const removeRow = (id: string) => {
-    setRows((prev) => prev.filter((r) => r.id !== id));
+const LocalizationSettingsSection: React.FC = () => {
+  const [rows, setRows] = React.useState<LegalDocRow[]>(buildSeedRows());
+
+  const updateRow = (id: string, patch: Partial<LegalDocRow>) => {
+    setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   };
 
   const handleSave = () => {
@@ -70,13 +43,12 @@ const LocalizationSettingsSection: React.FC = () => {
     <div className="space-y-6">
       <SectionCard
         title="Legal Documents by Country & Language"
-        subtitle="Link Privacy Policy and Terms & Conditions for each app-store country and language version."
+        subtitle="Pre-filled with all supported countries to avoid missing any locale."
         className="bg-[#04130d]"
       >
         <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-3">
           <p className="text-xs text-emerald-100 md:text-sm">
-            This is a critical requirement. Ensure backend enforcement and app-side
-            locale mapping when wiring APIs.
+            Critical: ensure backend + app locale mapping enforces correct URLs per country/language.
           </p>
         </div>
 
@@ -88,41 +60,20 @@ const LocalizationSettingsSection: React.FC = () => {
                 <th className="px-4 py-3">Language</th>
                 <th className="px-4 py-3">Privacy Policy URL</th>
                 <th className="px-4 py-3">Terms & Conditions URL</th>
-                <th className="px-4 py-3 w-24">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {rows.map((row) => (
                 <tr key={row.id} className="bg-black/20">
-                  <td className="px-4 py-3">
-                    <TextField
-                      label="Country"
-                      hideLabel
-                      value={row.country}
-                      onChange={(e) =>
-                        updateRow(row.id, { country: e.target.value })
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <TextField
-                      label="Language"
-                      hideLabel
-                      value={row.language}
-                      onChange={(e) =>
-                        updateRow(row.id, { language: e.target.value })
-                      }
-                    />
-                  </td>
+                  <td className="px-4 py-3">{row.country}</td>
+                  <td className="px-4 py-3">{row.language}</td>
                   <td className="px-4 py-3">
                     <TextField
                       label="Privacy URL"
                       hideLabel
                       placeholder="https://..."
                       value={row.privacyPolicyUrl}
-                      onChange={(e) =>
-                        updateRow(row.id, { privacyPolicyUrl: e.target.value })
-                      }
+                      onChange={(e) => updateRow(row.id, { privacyPolicyUrl: e.target.value })}
                     />
                   </td>
                   <td className="px-4 py-3">
@@ -131,19 +82,8 @@ const LocalizationSettingsSection: React.FC = () => {
                       hideLabel
                       placeholder="https://..."
                       value={row.termsUrl}
-                      onChange={(e) =>
-                        updateRow(row.id, { termsUrl: e.target.value })
-                      }
+                      onChange={(e) => updateRow(row.id, { termsUrl: e.target.value })}
                     />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Button
-                      variant="secondary"
-                      className="rounded-lg border border-white/10 bg-transparent px-3 py-1 text-xs hover:bg-white/10"
-                      onClick={() => removeRow(row.id)}
-                    >
-                      Remove
-                    </Button>
                   </td>
                 </tr>
               ))}
@@ -151,15 +91,7 @@ const LocalizationSettingsSection: React.FC = () => {
           </table>
         </div>
 
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            variant="secondary"
-            className="rounded-lg border border-white/10 bg-transparent hover:bg-white/10"
-            onClick={addRow}
-          >
-            + Add Locale Row
-          </Button>
-
+        <div className="mt-6 flex justify-end">
           <Button variant="primary" onClick={handleSave}>
             Save Changes
           </Button>
@@ -170,3 +102,4 @@ const LocalizationSettingsSection: React.FC = () => {
 };
 
 export default LocalizationSettingsSection;
+

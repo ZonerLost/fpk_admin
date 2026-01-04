@@ -38,10 +38,7 @@ function RowActions({
     if (!rect) return;
 
     const leftRaw = rect.right - MENU_WIDTH;
-    const left = Math.max(
-      GAP,
-      Math.min(leftRaw, window.innerWidth - MENU_WIDTH - GAP)
-    );
+    const left = Math.max(GAP, Math.min(leftRaw, window.innerWidth - MENU_WIDTH - GAP));
 
     const topRaw = rect.bottom + GAP;
     const top = Math.max(GAP, Math.min(topRaw, window.innerHeight - GAP));
@@ -65,7 +62,6 @@ function RowActions({
     };
   }, [open, computePos]);
 
-  // ✅ Outside click close (robust)
   React.useEffect(() => {
     if (!open) return;
 
@@ -182,9 +178,7 @@ const UsersTable: React.FC<Props> = ({ users, onView, onEdit, onDelete }) => {
       id: "userId",
       header: "User ID",
       width: "7rem",
-      cell: (row) => (
-        <span className="text-xs text-slate-300 md:text-sm">{row.userId}</span>
-      ),
+      cell: (row) => <span className="text-xs text-slate-300 md:text-sm">{row.userId}</span>,
     },
     {
       id: "name",
@@ -193,12 +187,8 @@ const UsersTable: React.FC<Props> = ({ users, onView, onEdit, onDelete }) => {
         <div className="flex min-w-0 items-center gap-3">
           <Avatar src={row.avatarUrl} name={row.name} size="md" variant="circle" />
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-medium text-slate-100">
-              {row.name}
-            </span>
-            <span className="truncate text-xs text-slate-400">
-              {row.email || row.phone || "N/A"}
-            </span>
+            <span className="truncate text-sm font-medium text-slate-100">{row.name}</span>
+            <span className="truncate text-xs text-slate-400">{row.email || row.phone || "N/A"}</span>
           </div>
         </div>
       ),
@@ -207,18 +197,19 @@ const UsersTable: React.FC<Props> = ({ users, onView, onEdit, onDelete }) => {
       id: "country",
       header: "Country",
       width: "8rem",
-      cell: (row) => (
-        <span className="text-xs text-slate-200 md:text-sm">{row.country}</span>
-      ),
+      cell: (row) => <span className="text-xs text-slate-200 md:text-sm">{row.country}</span>,
+    },
+    {
+      id: "language",
+      header: "Language",
+      width: "7rem",
+      cell: (row) => <span className="text-xs text-slate-200 md:text-sm">{row.language}</span>,
     },
     {
       id: "role",
       header: "Status",
-      width: "8rem",
-      cell: (row) => {
-        const variant = row.role === "Registered" ? "success" : "warning";
-        return <Badge variant={variant}>{row.role}</Badge>;
-      },
+      width: "7.5rem",
+      cell: () => <Badge variant="success">Registered</Badge>,
     },
     {
       id: "xp",
@@ -226,38 +217,28 @@ const UsersTable: React.FC<Props> = ({ users, onView, onEdit, onDelete }) => {
       width: "8rem",
       align: "right",
       cell: (row) => (
-        <span className="text-xs text-slate-100 md:text-sm">
-          {row.xpPoints.toLocaleString()} XP
-        </span>
+        <span className="text-xs text-slate-100 md:text-sm">{row.xpPoints.toLocaleString()} XP</span>
       ),
     },
     {
       id: "lastActive",
       header: "Last Active",
       width: "9rem",
-      cell: (row) => (
-        <span className="text-xs text-slate-300 md:text-sm">{row.lastActive}</span>
-      ),
+      cell: (row) => <span className="text-xs text-slate-300 md:text-sm">{row.lastActive}</span>,
     },
     {
       id: "pro",
       header: "Pro",
       width: "7rem",
       cell: (row) => {
-        if (row.proStatus === "None") {
-          return <span className="text-xs text-slate-500">—</span>;
-        }
-        const isActive = row.proStatus === "Active";
+        if (row.proStatus === "None") return <span className="text-xs text-slate-500">—</span>;
+
+        const dot =
+          row.proStatus === "Active" ? "bg-emerald-400" : "bg-amber-400"; // Lapsed = amber
         return (
           <div className="flex items-center gap-2">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                isActive ? "bg-emerald-400" : "bg-slate-500"
-              }`}
-            />
-            <span className="text-xs text-slate-100 md:text-sm">
-              {row.proStatus}
-            </span>
+            <span className={`h-2 w-2 rounded-full ${dot}`} />
+            <span className="text-xs text-slate-100 md:text-sm">{row.proStatus}</span>
           </div>
         );
       },
@@ -268,16 +249,8 @@ const UsersTable: React.FC<Props> = ({ users, onView, onEdit, onDelete }) => {
       width: "3.5rem",
       align: "right",
       cell: (row) => (
-        <div
-          className="flex justify-end"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <RowActions
-            row={row}
-            onView={onView}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
+        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <RowActions row={row} onView={onView} onEdit={onEdit} onDelete={onDelete} />
         </div>
       ),
     },

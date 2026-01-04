@@ -1,7 +1,7 @@
 import React from "react";
 import SectionCard from "../../shared/layout/SectionCard";
 import Badge from "../../shared/data-display/Badge";
-import type { FreeFormPost } from "./types";
+import type { FreeFormPost } from "./types/types";
 
 type Props = {
   posts: FreeFormPost[];

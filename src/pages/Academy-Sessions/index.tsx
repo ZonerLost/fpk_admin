@@ -6,149 +6,121 @@ import SearchBar from "../../shared/inputs/SearchBar";
 import SectionCard from "../../shared/layout/SectionCard";
 import Button from "../../shared/inputs/Button";
 
-import UpcomingSessionsGrid from "../../components/Academy-Sessions/UpcomingSessionsGrid";
-import AcademyRecordingsTable from "../../components/Academy-Sessions/AcademyRecordingsTable";
+import AcademyContentTable from "../../components/Academy-Sessions/AcademyContentTable";
 import PerformanceOverview from "../../components/Academy-Sessions/PerformanceOverview";
-import ScheduleSessionSlideOver from "../../components/Academy-Sessions/ScheduleSessionSlideOver";
+import AddAcademyContentSlideOver from "../../components/Academy-Sessions/AddAcedemyContentSliderOver";
 import RecordingDetailsSlideOver from "../../components/Academy-Sessions/RecordingDetailsSlideOver";
-import SessionDetailsSlideOver from "../../components/Academy-Sessions/SessionDetailsSlideOver";
-import CurrentWeekSurveyCard from "../../components/Academy-Sessions/CurrentWeekSurveyCard";
+import CurrentWeekSurveyCard from "../../components/Academy-Sessions/surveyManage/CurrentWeekSurveyCard";
 import FreeFormPostsCard from "../../components/Academy-Sessions/FreeFormPostsCard";
 import AcademyFiltersBar, {
   type AcademyFiltersState,
-} from "../../components/Academy-Sessions/AcademyFiltersBar";
+} from "../../components/Academy-Sessions/filter-Academy/AcademyFiltersBar";
+import SurveyManagerSlideOver, {
+  type SurveyVariantDraft,
+  type SurveyVariant as SlideOverSurveyVariant,
+} from "../../components/Academy-Sessions/surveyManage/SurveyManagerSlideOver";
 
 import type {
   RecordingItem,
-  SessionItem,
   WeeklySurvey,
   FreeFormPost,
-} from "../../components/Academy-Sessions/types";
+} from "../../components/Academy-Sessions/types/types";
+
+import { inferTimezone, formatReleaseLabel } from "../../components/Academy-Sessions/utils/academy.utils";
 
 import { FiSearch } from "react-icons/fi";
 
 /* ------------------------------ DEMO DATA ------------------------------ */
 
-const initialSessions: SessionItem[] = [
-  {
-    id: "1",
-    title: "Dribbling Masterclass",
-    displayTitle: "How to improve your dribbling skills",
-    releaseLabel: "Release Tue Oct 28, 4:00pm CET",
-    host: "John Doe",
-    date: "2024-10-28",
-    time: "16:00",
-    sessionType: "Live Training",
-    week: 4,
-    country: "Germany",
-    language: "EN",
-    thumbnailUrl: "https://picsum.photos/seed/dribbling-live/400/250",
-    description: "High-intensity dribbling drills and ball control.",
-  },
-  {
-    id: "1-de",
-    title: "Dribbling Masterclass",
-    displayTitle: "So verbesserst du dein Dribbling",
-    releaseLabel: "Release Di 28. Okt, 16:00 CET",
-    host: "John Doe",
-    date: "2024-10-28",
-    time: "16:00",
-    sessionType: "Live Training",
-    week: 4,
-    country: "Germany",
-    language: "DE",
-    thumbnailUrl: "https://picsum.photos/seed/dribbling-live/400/250",
-    description: "High-intensity dribbling drills and ball control.",
-  },
-  {
-    id: "2",
-    title: "Tactical Analysis",
-    displayTitle: "Breaking down tactical patterns",
-    releaseLabel: "Release Thu Oct 30, 6:00pm CET",
-    host: "Jane Smith",
-    date: "2024-10-30",
-    time: "18:00",
-    sessionType: "Webinar",
-    week: 5,
-    country: "USA",
-    language: "EN",
-    thumbnailUrl: "https://picsum.photos/seed/tactics-live/400/250",
-    description: "Breakdown of modern attacking/defensive patterns.",
-  },
-];
-
-const initialRecordings: RecordingItem[] = [
+const initialContent: RecordingItem[] = [
   {
     id: "r1-en",
+    contentId: "AC00001",
     title: "Passing Technique",
     displayTitle: "How to improve your passing skills",
-    releaseLabel: "Release Mon Oct 21, 6:00pm CET",
-    host: "David Villa",
-    date: "2024-10-02",
-    duration: "45 mins",
-    views: "1.2K",
-    access: "All",
-    week: 4,
-    position: 1,
     country: "Germany",
     language: "EN",
+    week: 4,
+    position: 1,
+    access: "All",
+    isFreeForRegistered: true,
+    releaseDate: "2026-01-12",
+    releaseTime: "16:00",
+    timezone: inferTimezone("Germany"),
     bucket: "currentWeek",
+    views: "1.2K",
+    duration: "45 mins",
+    host: "David Villa",
     tags: ["Technique"],
     description: "Core passing mechanics and real-game drills.",
+    thumbnailUrl: "https://picsum.photos/seed/passing/400/250",
   },
   {
     id: "r1-de",
+    contentId: "AC00002",
     title: "Passing Technique",
     displayTitle: "So verbesserst du dein Passspiel",
-    releaseLabel: "Release Mo 21. Okt, 18:00 CET",
-    host: "David Villa",
-    date: "2024-10-02",
-    duration: "45 mins",
-    views: "980",
-    access: "All",
-    week: 4,
-    position: 1,
     country: "Germany",
     language: "DE",
+    week: 4,
+    position: 1,
+    access: "All",
+    isFreeForRegistered: false,
+    releaseDate: "2026-01-12",
+    releaseTime: "16:00",
+    timezone: inferTimezone("Germany"),
     bucket: "currentWeek",
+    views: "980",
+    duration: "45 mins",
+    host: "David Villa",
     tags: ["Technique"],
-    description: "Core passing mechanics and real-game drills.",
+    thumbnailUrl: "https://picsum.photos/seed/passing/400/250",
   },
   {
     id: "r2",
+    contentId: "AC00003",
     title: "Defensive Positioning",
     displayTitle: "Defensive Positioning",
-    releaseLabel: "Release Week 3",
-    host: "Carles Puyol",
-    date: "2024-09-28",
-    duration: "60 mins",
-    views: "2.5K",
-    access: "Pro",
-    week: 3,
-    position: 2,
     country: "USA",
     language: "EN",
+    week: 3,
+    position: 2,
+    access: "Pro",
+    isFreeForRegistered: false,
+    releaseDate: "2025-12-28",
+    releaseTime: "16:00",
+    timezone: inferTimezone("USA"),
     bucket: "past",
+    views: "2.5K",
+    duration: "60 mins",
+    host: "Carles Puyol",
     tags: ["Tactic"],
+    thumbnailUrl: "https://picsum.photos/seed/defense/400/250",
   },
 ];
 
-const currentWeekSurvey: WeeklySurvey = {
+const currentWeekSurveySeed: WeeklySurvey = {
   id: "s1",
   week: 4,
   variants: [
     {
       id: "s1-de-en",
+      week: 4,
       country: "Germany",
       language: "EN",
       question: "Which drill helped you most this week?",
+      responseMode: "both",
+      multipleChoiceOptions: ["Passing under pressure", "First touch", "Positioning"],
       responsesCount: 128,
     },
     {
       id: "s1-de-de",
+      week: 4,
       country: "Germany",
       language: "DE",
       question: "Welche Übung hat dir diese Woche am meisten geholfen?",
+      responseMode: "multiple_choice",
+      multipleChoiceOptions: ["Passspiel", "Erster Kontakt", "Positionierung"],
       responsesCount: 94,
     },
   ],
@@ -176,6 +148,7 @@ const freeFormPostsSeed: FreeFormPost[] = [
 /* ------------------------------ PAGE ------------------------------ */
 
 const PAGE_SIZE = 10;
+const MAX_ONSCREEN = 5000;
 
 const AcedamySessionsPage: React.FC = () => {
   const [search, setSearch] = React.useState("");
@@ -186,107 +159,92 @@ const AcedamySessionsPage: React.FC = () => {
     bucket: "All",
   });
 
-  const [sessions, setSessions] = React.useState<SessionItem[]>(initialSessions);
-  const [recordings, setRecordings] =
-    React.useState<RecordingItem[]>(initialRecordings);
+  const [items, setItems] = React.useState<RecordingItem[]>(initialContent);
+  const [freeFormPosts] = React.useState<FreeFormPost[]>(freeFormPostsSeed);
 
-  const [freeFormPosts] =
-    React.useState<FreeFormPost[]>(freeFormPostsSeed);
+  const [survey, setSurvey] = React.useState<WeeklySurvey>(currentWeekSurveySeed);
+  const [editingSurveyVariant, setEditingSurveyVariant] = React.useState<SlideOverSurveyVariant | null>(null);
 
-  const [isScheduleOpen, setIsScheduleOpen] = React.useState(false);
+  const [isAddOpen, setIsAddOpen] = React.useState(false);
 
-  // Recording View
-  const [selectedRecording, setSelectedRecording] =
-    React.useState<RecordingItem | null>(null);
-  const [isRecordingViewOpen, setIsRecordingViewOpen] =
-    React.useState(false);
+  // View content
+  const [selected, setSelected] = React.useState<RecordingItem | null>(null);
+  const [isViewOpen, setIsViewOpen] = React.useState(false);
 
-  // ✅ NEW: Session View
-  const [selectedSession, setSelectedSession] =
-    React.useState<SessionItem | null>(null);
-  const [isSessionViewOpen, setIsSessionViewOpen] =
-    React.useState(false);
+  // Survey manager
+  const [surveyOpen, setSurveyOpen] = React.useState(false);
 
   const handleFiltersChange = (partial: Partial<AcademyFiltersState>) => {
     setFilters((prev) => ({ ...prev, ...partial }));
   };
 
-  const handleCreateSession = (payload: Omit<SessionItem, "id">) => {
-    const newSession: SessionItem = {
+  const handleCreate = (payload: Omit<RecordingItem, "id">) => {
+    const newItem: RecordingItem = {
       id: Date.now().toString(),
       ...payload,
     };
-    setSessions((prev) => [newSession, ...prev]);
+    setItems((prev) => [newItem, ...prev]);
   };
 
-  const handleViewRecording = (row: RecordingItem) => {
-    setSelectedRecording(row);
-    setIsRecordingViewOpen(true);
+  const handleView = (row: RecordingItem) => {
+    setSelected(row);
+    setIsViewOpen(true);
   };
 
-  const handleRemoveRecording = (id: string) => {
-    setRecordings((prev) => prev.filter((r) => r.id !== id));
-    setIsRecordingViewOpen(false);
+  const handleRemove = (id: string) => {
+    setItems((prev) => prev.filter((r) => r.id !== id));
+    setIsViewOpen(false);
   };
 
-  // ✅ NEW
-  const handleViewSession = (row: SessionItem) => {
-    setSelectedSession(row);
-    setIsSessionViewOpen(true);
-  };
-
-  const filteredSessions = React.useMemo(() => {
-    const q = search.trim().toLowerCase();
-
-    return sessions.filter((s) => {
-      if (filters.country !== "All" && s.country !== filters.country)
-        return false;
-      if (filters.language !== "All" && s.language !== filters.language)
-        return false;
-
-      if (!q) return true;
-
-      const haystack = [
-        s.title,
-        s.displayTitle,
-        s.host,
-        s.country,
-        s.language,
-        s.sessionType,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(q);
-    });
-  }, [sessions, search, filters]);
-
-  const filteredRecordings = React.useMemo(() => {
-    const q = search.trim().toLowerCase();
-
-    return recordings.filter((r) => {
-      if (filters.country !== "All" && r.country !== filters.country)
-        return false;
-      if (filters.language !== "All" && r.language !== filters.language)
-        return false;
-
-      if (filters.bucket !== "All") {
-        if (filters.bucket === "currentWeek" && r.bucket !== "currentWeek")
-          return false;
-        if (filters.bucket === "past" && r.bucket !== "past")
-          return false;
+  const handleSaveSurveyVariant = (draft: SurveyVariantDraft) => {
+    setSurvey((prev) => {
+      if (editingSurveyVariant) {
+        return {
+          ...prev,
+          week: draft.week,
+          variants: prev.variants.map((v) =>
+            v.id === editingSurveyVariant.id
+              ? { ...v, ...draft, responsesCount: v.responsesCount }
+              : v
+          ),
+        };
       }
 
+      const next: SlideOverSurveyVariant = {
+        id: `sv-${Date.now()}`,
+        responsesCount: 0,
+        ...draft,
+      };
+
+      return {
+        ...prev,
+        week: draft.week,
+        variants: [next, ...prev.variants],
+      };
+    });
+
+    setEditingSurveyVariant(null);
+    setSurveyOpen(false);
+  };
+
+  const filtered = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return items.filter((x) => {
+      if (filters.country !== "All" && x.country !== filters.country) return false;
+      if (filters.language !== "All" && x.language !== filters.language) return false;
+
       if (!q) return true;
 
       const haystack = [
-        r.title,
-        r.displayTitle,
-        r.host,
-        r.country,
-        r.language,
-        ...(r.tags ?? []),
+        x.contentId,
+        x.title,
+        x.displayTitle,
+        x.country,
+        x.language,
+        x.access,
+        formatReleaseLabel({ releaseDate: x.releaseDate, releaseTime: x.releaseTime, timezone: x.timezone }),
+        ...(x.tags ?? []),
       ]
         .filter(Boolean)
         .join(" ")
@@ -294,68 +252,88 @@ const AcedamySessionsPage: React.FC = () => {
 
       return haystack.includes(q);
     });
-  }, [recordings, search, filters]);
+  }, [items, search, filters]);
 
-  const paginatedRecordings = filteredRecordings.slice(0, PAGE_SIZE);
+  const currentWeekRows = filtered.filter((x) => x.bucket === "currentWeek");
+  const pastRows = filtered.filter((x) => x.bucket === "past");
+
+  const showCurrent = filters.bucket === "All" || filters.bucket === "currentWeek";
+  const showPast = filters.bucket === "All" || filters.bucket === "past";
+
+  const currentWeekPage = currentWeekRows.slice(0, Math.min(PAGE_SIZE, MAX_ONSCREEN));
+  const pastPage = pastRows.slice(0, Math.min(PAGE_SIZE, MAX_ONSCREEN));
 
   return (
     <>
       <PageShell>
         <PageHeader
           title="Academy Sessions"
-          subtitle="Manage live sessions, academy content, current-week surveys, and free-form posts by country and language."
+          subtitle="Manage weekly recording releases, surveys, and posts by country and language."
           actions={
-            <Button
-              variant="primary"
-              className="rounded-full bg-emerald-500 text-black hover:bg-emerald-400"
-              onClick={() => setIsScheduleOpen(true)}
-            >
-              + Schedule New Session
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                className="rounded-full border border-white/10 bg-transparent"
+                onClick={() => {
+                  setEditingSurveyVariant(null);
+                  setSurveyOpen(true);
+                }}
+              >
+                Manage Survey
+              </Button>
+
+              <Button
+                variant="primary"
+                className="rounded-full bg-emerald-500 text-black hover:bg-emerald-400"
+                onClick={() => setIsAddOpen(true)}
+              >
+                + Add Academy Content
+              </Button>
+            </div>
           }
         />
 
         {/* Search + filters */}
-        <SectionCard
-          className="mt-4 bg-[#04130d]"
-          contentClassName="space-y-4"
-        >
+        <SectionCard className="mt-4 bg-[#04130d]" contentClassName="space-y-4">
           <TableToolbar
             search={
               <SearchBar
                 value={search}
                 onChange={setSearch}
-                placeholder="Search sessions, recordings, tags..."
+                placeholder="Search by content ID, title, country, language..."
                 leftIcon={<FiSearch />}
                 className="bg-[#071810]"
               />
             }
-            filters={
-              <AcademyFiltersBar
-                filters={filters}
-                onChange={handleFiltersChange}
-              />
-            }
+            filters={<AcademyFiltersBar filters={filters} onChange={handleFiltersChange} />}
           />
         </SectionCard>
 
         <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-3 xl:grid-cols-4">
           {/* Left */}
           <div className="space-y-5 min-w-0 lg:col-span-2 xl:col-span-3">
-            {/* ✅ UPDATED with onView */}
-            <UpcomingSessionsGrid
-              sessions={filteredSessions}
-              onView={handleViewSession}
-            />
+            {showCurrent && (
+              <AcademyContentTable
+                title="Academy Content List — Current Week"
+                subtitle="Table view scales better across many countries & languages."
+                rows={currentWeekPage}
+                onView={handleView}
+                onRemove={handleRemove}
+              />
+            )}
 
-            <AcademyRecordingsTable
-              recordings={paginatedRecordings}
-              onView={handleViewRecording}
-              onRemove={handleRemoveRecording}
-            />
+            {showPast && (
+              <AcademyContentTable
+                title="Academy Content List — Past Weeks"
+                subtitle="Use filters above to narrow by country and language."
+                rows={pastPage}
+                onView={handleView}
+                onRemove={handleRemove}
+              />
+            )}
 
             <CurrentWeekSurveyCard
-              survey={currentWeekSurvey}
+              survey={survey}
               activeCountry={filters.country}
               activeLanguage={filters.language}
             />
@@ -374,29 +352,37 @@ const AcedamySessionsPage: React.FC = () => {
         </div>
       </PageShell>
 
-      {/* Schedule */}
-      <ScheduleSessionSlideOver
-        isOpen={isScheduleOpen}
-        onClose={() => setIsScheduleOpen(false)}
+      {/* Add Academy Content */}
+      <AddAcademyContentSlideOver
+        isOpen={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        existingContentIds={items.map((x) => x.contentId)}
+        existingItems={items}
         onCreate={(payload) => {
-          handleCreateSession(payload);
-          setIsScheduleOpen(false);
+          handleCreate(payload);
+          setIsAddOpen(false);
         }}
       />
 
-      {/* Recording View */}
+      {/* View */}
       <RecordingDetailsSlideOver
-        isOpen={isRecordingViewOpen}
-        recording={selectedRecording}
-        onClose={() => setIsRecordingViewOpen(false)}
-        onRemove={handleRemoveRecording}
+        isOpen={isViewOpen}
+        recording={selected}
+        onClose={() => setIsViewOpen(false)}
+        onRemove={handleRemove}
       />
 
-      {/* ✅ NEW: Session View */}
-      <SessionDetailsSlideOver
-        isOpen={isSessionViewOpen}
-        session={selectedSession}
-        onClose={() => setIsSessionViewOpen(false)}
+      {/* Survey manager */}
+      <SurveyManagerSlideOver
+        isOpen={surveyOpen}
+        onClose={() => {
+          setSurveyOpen(false);
+          setEditingSurveyVariant(null);
+        }}
+        editing={editingSurveyVariant}
+        defaultCountry={filters.country !== "All" ? filters.country : undefined}
+        defaultLanguage={filters.language !== "All" ? filters.language : undefined}
+        onSave={handleSaveSurveyVariant}
       />
     </>
   );
