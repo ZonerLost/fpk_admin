@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Label,
 } from "recharts";
 import LineChartCard from "../../shared/charts/LineChartCard";
 import { cn } from "../../shared/utils/cn";
@@ -20,25 +21,43 @@ type Props = {
   countriesLabel: string;
 };
 
-const mockData = [
-  { label: "P1", registered: 120, pro: 12, monthly: 8, six: 3, twelve: 1 },
-  { label: "P2", registered: 140, pro: 14, monthly: 9, six: 3, twelve: 2 },
-  { label: "P3", registered: 180, pro: 16, monthly: 10, six: 4, twelve: 2 },
-  { label: "P4", registered: 210, pro: 20, monthly: 14, six: 4, twelve: 2 },
-  { label: "P5", registered: 260, pro: 25, monthly: 17, six: 5, twelve: 3 },
-];
+const compact = new Intl.NumberFormat(undefined, { notation: "compact" });
 
-const NewCustomersCard: React.FC<Props> = ({
-  className,
-  timeframe,
-  range,
-  countriesLabel,
-}) => {
+function makeLabels(tf: Timeframe, n: number) {
+  const now = new Date();
+  const labels: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now);
+    if (tf === "daily") d.setDate(now.getDate() - i);
+    if (tf === "weekly") d.setDate(now.getDate() - i * 7);
+    if (tf === "monthly") d.setMonth(now.getMonth() - i);
+    if (tf === "yearly") d.setFullYear(now.getFullYear() - i);
+
+    const txt =
+      tf === "daily"
+        ? d.toISOString().slice(0, 10)
+        : tf === "weekly"
+        ? d.toISOString().slice(0, 10) // week-start-ish (approx)
+        : tf === "monthly"
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+        : String(d.getFullYear());
+
+    labels.push(txt);
+  }
+  return labels;
+}
+
+const NewCustomersCard: React.FC<Props> = ({ className, timeframe, range, countriesLabel }) => {
   const subtitle = `New customers · ${countriesLabel} · ${timeframe} · last ${range}`;
+  const labels = React.useMemo(() => makeLabels(timeframe, Math.max(4, Math.min(range, 24))), [timeframe, range]);
 
-  const handleDownload = () => {
-    downloadCsv("new-customers.csv", mockData);
-  };
+  const data = React.useMemo(() => {
+    return labels.map((label, idx) => ({
+      label,
+      registered: 120 + idx * 35,
+      pro: 12 + idx * 2,
+    }));
+  }, [labels]);
 
   return (
     <LineChartCard
@@ -51,7 +70,7 @@ const NewCustomersCard: React.FC<Props> = ({
       <div className="flex items-center justify-end">
         <button
           type="button"
-          onClick={handleDownload}
+          onClick={() => downloadCsv("new-customers.csv", data)}
           className="mb-2 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-slate-200 hover:bg-white/10"
         >
           Download data
@@ -60,10 +79,24 @@ const NewCustomersCard: React.FC<Props> = ({
 
       <div className="h-40 min-h-[10rem] md:h-52">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={mockData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <LineChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 12 }}>
             <CartesianGrid stroke="#16a34a" strokeOpacity={0.15} vertical={false} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="#9ca3af" tick={{ fontSize: 12 }} />
-            <YAxis hide />
+
+            <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="#9ca3af" tick={{ fontSize: 11 }}>
+              <Label value="Date" position="insideBottom" offset={-16} fill="#9ca3af" />
+            </XAxis>
+
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              stroke="#9ca3af"
+              tick={{ fontSize: 11 }}
+              tickFormatter={(v) => compact.format(v)}
+              width={46}
+            >
+              <Label value="Users" angle={-90} position="insideLeft" fill="#9ca3af" />
+            </YAxis>
+
             <Tooltip
               contentStyle={{
                 backgroundColor: "#020617",
@@ -73,18 +106,16 @@ const NewCustomersCard: React.FC<Props> = ({
                 fontSize: 12,
               }}
             />
+
             <Line type="monotone" dataKey="registered" stroke="#22c55e" strokeWidth={2.4} dot={false} />
             <Line type="monotone" dataKey="pro" stroke="#fbbf24" strokeWidth={2.0} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-300 md:grid-cols-5">
+      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-300 md:grid-cols-2">
         <span>Registered</span>
         <span>Pro</span>
-        <span>Pro Monthly</span>
-        <span>Pro 6M</span>
-        <span>Pro 12M</span>
       </div>
     </LineChartCard>
   );

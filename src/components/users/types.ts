@@ -1,64 +1,77 @@
-// export type UserRole = "Registered" | "Unregistered";
+export type RegistrationStatus = "Unregistered" | "Registered";
 
-// /**
-//  * "None" is important for Unregistered users.
-//  * This resolves the client question:
-//  * "In Pro column, how can we have data if they are unregistered?"
-//  */
-// export type ProStatus = "Active" | "Inactive" | "None";
+export type AccountStatus = "Registered" | "PRO_1M" | "PRO_6M" | "PRO_12M";
 
-// export interface UserItem {
-//   id: string;          // internal id
-//   userId: string;      // "USR-8421"
-//   name: string;
-//   email?: string;
-//   phone?: string;
+export type PlanStatus = "Free" | "Pro" | "Trial";
 
-//   /**
-//    * Ideally from App Store / Play Store country where app was downloaded.
-//    * Backend should own this field.
-//    */
-//   country: string;
+export type SubscriptionState =
+  | "None"
+  | "Active"
+  | "PastDue"
+  | "Canceled"
+  | "Trialing"
+  | "Incomplete";
 
-//   role: UserRole;
+export type SupportAction =
+  | "resend_verification"
+  | "reset_password"
+  | "sync_billing"
+  | "grant_pro_timebound"
+  | "revoke_sessions";
 
-//   xpPoints: number;
-//   lastActive: string;  // "2 hours ago"
+export type MembershipHistoryItem = {
+  id: string;
+  status: AccountStatus;
+  subscriptionState: Exclude<SubscriptionState, "None">;
+  startedAt: string; // ISO
+  endedAt?: string;  // ISO
+};
 
-//   /** Renamed from "subscription" conceptually; still a field for UI state */
-//   proStatus: ProStatus;
+export type PaymentHistoryItem = {
+  id: string;
+  amount: number;
+  currency: string;
+  paidAt: string; // ISO
+  status: "Paid" | "Failed" | "Refunded" | "Pending";
+  providerRef?: string;
+};
 
-//   avatarUrl?: string;
-// }
+export type UserEvidence = {
+  lastLoginAt?: string;   // ISO
+  lastActiveAt?: string;  // ISO
+  lastPaymentAt?: string; // ISO
+  lastErrorAt?: string;   // ISO
+  auditLogCount?: number;
+};
 
-
-export type UserRole = "Registered" | "Unregistered";
-
-/**
- * Pro status:
- * - Active: current paying user
- * - Lapsed: previously pro, now expired
- * - None: never pro / free
- */
-export type ProStatus = "Active" | "Inactive" | "Lapsed" | "None";
-
-export interface UserItem {
-  id: string;     // internal id
-  userId: string; // "USR-8421"
+export type UserItem = {
+  id: string;
+  userId: string;
 
   name: string;
   email?: string;
   phone?: string;
+  avatarUrl?: string;
 
   country: string;
   language: string;
 
-  role: UserRole;
+  // ✅ Support-console fields
+  registrationStatus: RegistrationStatus;
+  emailVerified: boolean;
 
+  accountStatus: AccountStatus; // used in filter + table
+  planStatus: PlanStatus;
+  subscriptionState: SubscriptionState;
+
+  joinedAt: string; // ISO
   xpPoints: number;
-  lastActive: string; // UI-friendly string (ideally backend gives timestamps)
 
-  proStatus: ProStatus;
+  // for UI quick display
+  lastActiveLabel: string;
 
-  avatarUrl?: string;
-}
+  evidence: UserEvidence;
+
+  membershipHistory?: MembershipHistoryItem[];
+  paymentHistory?: PaymentHistoryItem[];
+};

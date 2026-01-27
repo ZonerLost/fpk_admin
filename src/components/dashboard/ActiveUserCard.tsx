@@ -7,101 +7,162 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Label,
+  Legend,
 } from "recharts";
 import LineChartCard from "../../shared/charts/LineChartCard";
 import { cn } from "../../shared/utils/cn";
 import { downloadCsv } from "./downloadCsv";
 import type { Timeframe } from "./DashboardFiltersBar";
 
+type Metric = "dau" | "wau" | "mau";
+
 type Props = {
   className?: string;
   timeframe: Timeframe;
   range: number;
   countriesLabel: string;
-  userType: "all" | "registered" | "pro";
-  planType: "all" | "monthly" | "6m" | "12m";
-  onChangeUserType: (v: Props["userType"]) => void;
-  onChangePlanType: (v: Props["planType"]) => void;
+
+  primaryMetric: Metric;
+  compareMetric: Metric | "none";
+  onChangePrimaryMetric: (v: Metric) => void;
+  onChangeCompareMetric: (v: Metric | "none") => void;
 };
 
-const mockData = [
-  { label: "P1", active: 520 },
-  { label: "P2", active: 610 },
-  { label: "P3", active: 580 },
-  { label: "P4", active: 690 },
-  { label: "P5", active: 740 },
-];
+const compact = new Intl.NumberFormat(undefined, { notation: "compact" });
+
+function makeLabels(tf: Timeframe, n: number) {
+  const now = new Date();
+  const labels: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now);
+    if (tf === "daily") d.setDate(now.getDate() - i);
+    if (tf === "weekly") d.setDate(now.getDate() - i * 7);
+    if (tf === "monthly") d.setMonth(now.getMonth() - i);
+    if (tf === "yearly") d.setFullYear(now.getFullYear() - i);
+
+    const txt =
+      tf === "daily"
+        ? d.toISOString().slice(0, 10)
+        : tf === "weekly"
+        ? d.toISOString().slice(0, 10)
+        : tf === "monthly"
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+        : String(d.getFullYear());
+
+    labels.push(txt);
+  }
+  return labels;
+}
+
+function metricLabel(m: Metric) {
+  if (m === "dau") return "DAU";
+  if (m === "wau") return "WAU";
+  return "MAU";
+}
 
 const ActiveUsersCard: React.FC<Props> = ({
   className,
   timeframe,
   range,
   countriesLabel,
-  userType,
-  planType,
-  onChangeUserType,
-  onChangePlanType,
+  primaryMetric,
+  compareMetric,
+  onChangePrimaryMetric,
+  onChangeCompareMetric,
 }) => {
   const subtitle = `Active users · ${countriesLabel} · ${timeframe} · last ${range}`;
+
+  const labels = React.useMemo(() => makeLabels(timeframe, Math.max(5, Math.min(range, 24))), [timeframe, range]);
+
+  const data = React.useMemo(() => {
+    return labels.map((label, idx) => ({
+      label,
+      dau: 520 + idx * 18,
+      wau: 2100 + idx * 45,
+      mau: 8200 + idx * 120,
+    }));
+  }, [labels]);
+
+  const showCompare = compareMetric !== "none" && compareMetric !== primaryMetric;
 
   return (
     <LineChartCard
       title="Active Users"
-      primaryStat="DAU/WAU/MAU (mock)"
+      primaryStat={`${metricLabel(primaryMetric)}${showCompare ? ` vs ${metricLabel(compareMetric as Metric)}` : ""} (mock)`}
       subtitle={subtitle}
       deltaText="—"
       className={cn(className)}
     >
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          {(["all", "registered", "pro"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => onChangeUserType(t)}
-              className={cn(
-                "rounded-full border px-3 py-1 text-[11px] font-medium capitalize",
-                userType === t
-                  ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-200"
-                  : "border-white/10 text-slate-300 hover:bg-white/5"
-              )}
-            >
-              {t}
-            </button>
-          ))}
+          <div className="flex items-center gap-1">
+            {(["dau", "wau", "mau"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => onChangePrimaryMetric(m)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-[11px] font-medium",
+                  primaryMetric === m
+                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-200"
+                    : "border-white/10 text-slate-300 hover:bg-white/5"
+                )}
+              >
+                {metricLabel(m)}
+              </button>
+            ))}
+          </div>
 
-          {(["all", "monthly", "6m", "12m"] as const).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => onChangePlanType(p)}
-              className={cn(
-                "rounded-full border px-3 py-1 text-[11px] font-medium uppercase",
-                planType === p
-                  ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
-                  : "border-white/10 text-slate-300 hover:bg-white/5"
-              )}
-            >
-              {p}
-            </button>
-          ))}
+          <div className="flex items-center gap-1">
+            <span className="ml-1 text-[11px] font-semibold text-slate-300">Compare:</span>
+            {(["none", "dau", "wau", "mau"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => onChangeCompareMetric(m)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-[11px] font-medium",
+                  compareMetric === m
+                    ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
+                    : "border-white/10 text-slate-300 hover:bg-white/5"
+                )}
+              >
+                {m === "none" ? "Off" : metricLabel(m)}
+              </button>
+            ))}
+          </div>
         </div>
 
         <button
           type="button"
-          onClick={() => downloadCsv("active-users.csv", mockData)}
+          onClick={() => downloadCsv("active-users.csv", data)}
           className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-slate-200 hover:bg-white/10"
         >
           Download data
         </button>
       </div>
 
-      <div className="h-40 min-h-[10rem] md:h-52">
+      <div className="h-44 min-h-[11rem] md:h-56">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={mockData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <LineChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 12 }}>
             <CartesianGrid stroke="#16a34a" strokeOpacity={0.15} vertical={false} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="#9ca3af" tick={{ fontSize: 12 }} />
-            <YAxis hide />
+
+            <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="#9ca3af" tick={{ fontSize: 11 }}>
+              <Label value="Date" position="insideBottom" offset={-16} fill="#9ca3af" />
+            </XAxis>
+
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              stroke="#9ca3af"
+              tick={{ fontSize: 11 }}
+              tickFormatter={(v) => compact.format(v)}
+              width={46}
+            >
+              <Label value="Active users" angle={-90} position="insideLeft" fill="#9ca3af" />
+            </YAxis>
+
             <Tooltip
               contentStyle={{
                 backgroundColor: "#020617",
@@ -111,13 +172,34 @@ const ActiveUsersCard: React.FC<Props> = ({
                 fontSize: 12,
               }}
             />
-            <Line type="monotone" dataKey="active" stroke="#22c55e" strokeWidth={2.4} dot={false} />
+
+            <Legend />
+
+            <Line
+              type="monotone"
+              dataKey={primaryMetric}
+              name={metricLabel(primaryMetric)}
+              stroke="#22c55e"
+              strokeWidth={2.4}
+              dot={false}
+            />
+
+            {showCompare && (
+              <Line
+                type="monotone"
+                dataKey={compareMetric as Metric}
+                name={metricLabel(compareMetric as Metric)}
+                stroke="#fbbf24"
+                strokeWidth={2.2}
+                dot={false}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
 
       <div className="mt-3 text-[11px] text-slate-400">
-        * DAU/WAU/MAU should be computed by backend per timeframe.
+        * DAU/WAU/MAU should be computed by backend per timeframe/range (or Date X → Date Y).
       </div>
     </LineChartCard>
   );

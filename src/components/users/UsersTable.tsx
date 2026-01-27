@@ -17,6 +17,25 @@ type Props = {
 const MENU_WIDTH = 170;
 const GAP = 8;
 
+function formatDateShort(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "2-digit" }).format(d);
+}
+
+function statusLabel(s: UserItem["accountStatus"]) {
+  if (s === "Registered") return "Registered";
+  if (s === "PRO_1M") return "PRO 1M";
+  if (s === "PRO_6M") return "PRO 6M";
+  return "PRO 12M";
+}
+
+function statusVariant(s: UserItem["accountStatus"], reg: UserItem["registrationStatus"]) {
+  if (reg === "Unregistered") return "warning";
+  if (s === "Registered") return "success";
+  return "info";
+}
+
 function RowActions({
   row,
   onView,
@@ -206,42 +225,33 @@ const UsersTable: React.FC<Props> = ({ users, onView, onEdit, onDelete }) => {
       cell: (row) => <span className="text-xs text-slate-200 md:text-sm">{row.language}</span>,
     },
     {
-      id: "role",
+      id: "status",
       header: "Status",
-      width: "7.5rem",
-      cell: () => <Badge variant="success">Registered</Badge>,
+      width: "9rem",
+      cell: (row) => (
+        <Badge variant={statusVariant(row.accountStatus, row.registrationStatus)}>
+          {row.registrationStatus === "Unregistered" ? "Unregistered" : statusLabel(row.accountStatus)}
+        </Badge>
+      ),
     },
     {
       id: "xp",
       header: "XP Points",
       width: "8rem",
       align: "right",
-      cell: (row) => (
-        <span className="text-xs text-slate-100 md:text-sm">{row.xpPoints.toLocaleString()} XP</span>
-      ),
+      cell: (row) => <span className="text-xs text-slate-100 md:text-sm">{row.xpPoints.toLocaleString()} XP</span>,
     },
     {
       id: "lastActive",
       header: "Last Active",
       width: "9rem",
-      cell: (row) => <span className="text-xs text-slate-300 md:text-sm">{row.lastActive}</span>,
+      cell: (row) => <span className="text-xs text-slate-300 md:text-sm">{row.lastActiveLabel}</span>,
     },
     {
-      id: "pro",
-      header: "Pro",
-      width: "7rem",
-      cell: (row) => {
-        if (row.proStatus === "None") return <span className="text-xs text-slate-500">—</span>;
-
-        const dot =
-          row.proStatus === "Active" ? "bg-emerald-400" : "bg-amber-400"; // Lapsed = amber
-        return (
-          <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${dot}`} />
-            <span className="text-xs text-slate-100 md:text-sm">{row.proStatus}</span>
-          </div>
-        );
-      },
+      id: "memberSince",
+      header: "Member since",
+      width: "10rem",
+      cell: (row) => <span className="text-xs text-slate-300 md:text-sm">{formatDateShort(row.joinedAt)}</span>,
     },
     {
       id: "actions",
@@ -258,12 +268,7 @@ const UsersTable: React.FC<Props> = ({ users, onView, onEdit, onDelete }) => {
 
   return (
     <SectionCard className="bg-[#04130d]" contentClassName="p-0">
-      <DataTable
-        columns={columns}
-        data={users}
-        getRowKey={(row) => row.id}
-        containerClassName="max-w-full overflow-x-auto scrollbar-thin"
-      />
+      <DataTable columns={columns} data={users} getRowKey={(row) => row.id} containerClassName="max-w-full overflow-x-auto scrollbar-thin" />
     </SectionCard>
   );
 };
