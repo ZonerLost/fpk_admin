@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   FiGrid,
-  FiFileText,
+  // FiFileText,
   FiUsers,
   FiBarChart2,
   FiSettings,
@@ -24,7 +24,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", to: "/", icon: FiGrid },
-  { label: "Content Management", to: "/content", icon: FiFileText },
+  // { label: "Content Management", to: "/content", icon: FiFileText },
   { label: "Users", to: "/users", icon: FiUsers },
   { label: "Academy Sessions", to: "/academysessions", icon: FiBarChart2 },
   { label: "Settings", to: "/settings", icon: FiSettings },

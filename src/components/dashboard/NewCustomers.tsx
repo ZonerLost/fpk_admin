@@ -13,12 +13,20 @@ import LineChartCard from "../../shared/charts/LineChartCard";
 import { cn } from "../../shared/utils/cn";
 import { downloadCsv } from "./downloadCsv";
 import type { Timeframe } from "./DashboardFiltersBar";
+import {
+  SEGMENT_META,
+  type CustomerSegment,
+  segmentsSummary,
+} from "./customerSegments";
 
 type Props = {
   className?: string;
   timeframe: Timeframe;
   range: number;
   countriesLabel: string;
+
+  //  NEW
+  selectedSegments: CustomerSegment[];
 };
 
 const compact = new Intl.NumberFormat(undefined, { notation: "compact" });
@@ -37,7 +45,7 @@ function makeLabels(tf: Timeframe, n: number) {
       tf === "daily"
         ? d.toISOString().slice(0, 10)
         : tf === "weekly"
-        ? d.toISOString().slice(0, 10) // week-start-ish (approx)
+        ? d.toISOString().slice(0, 10)
         : tf === "monthly"
         ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
         : String(d.getFullYear());
@@ -47,22 +55,65 @@ function makeLabels(tf: Timeframe, n: number) {
   return labels;
 }
 
-const NewCustomersCard: React.FC<Props> = ({ className, timeframe, range, countriesLabel }) => {
-  const subtitle = `New customers · ${countriesLabel} · ${timeframe} · last ${range}`;
-  const labels = React.useMemo(() => makeLabels(timeframe, Math.max(4, Math.min(range, 24))), [timeframe, range]);
+type Row = { label: string } & Record<
+  "registered" | "pro_monthly" | "pro_6_month" | "pro_12_month",
+  number
+>;
 
-  const data = React.useMemo(() => {
-    return labels.map((label, idx) => ({
-      label,
-      registered: 120 + idx * 35,
-      pro: 12 + idx * 2,
-    }));
+const NewCustomersCard: React.FC<Props> = ({
+  className,
+  timeframe,
+  range,
+  countriesLabel,
+  selectedSegments,
+}) => {
+  const labels = React.useMemo(
+    () => makeLabels(timeframe, Math.max(4, Math.min(range, 24))),
+    [timeframe, range]
+  );
+
+  const data = React.useMemo<Row[]>(() => {
+    return labels.map((label, idx) => {
+      // mock split: registered bigger, pro plans smaller
+      const registered = 120 + idx * 35;
+      const proMonthly = 6 + idx * 2;
+      const pro6 = 4 + idx * 1;
+      const pro12 = 2 + idx * 1;
+
+      return {
+        label,
+        registered,
+        pro_monthly: proMonthly,
+        pro_6_month: pro6,
+        pro_12_month: pro12,
+      };
+    });
   }, [labels]);
+
+  const summary = segmentsSummary(selectedSegments);
+  const subtitle = `New customers · ${countriesLabel} · ${timeframe} · last ${range} · ${summary}`;
+
+  const last = data[data.length - 1];
+  const primaryStat = React.useMemo(() => {
+    if (!last) return "(mock)";
+    const total = selectedSegments.reduce((sum, k) => sum + (last[k] ?? 0), 0);
+    return `${compact.format(total)} (mock)`;
+  }, [last, selectedSegments]);
+
+  const csvRows = React.useMemo(() => {
+    return data.map((r) => {
+      const base: Record<string, string | number> = { label: r.label };
+      selectedSegments.forEach((k) => {
+        base[SEGMENT_META[k].label] = r[k];
+      });
+      return base;
+    });
+  }, [data, selectedSegments]);
 
   return (
     <LineChartCard
       title="New Customers"
-      primaryStat="(mock)"
+      primaryStat={primaryStat}
       subtitle={subtitle}
       deltaText="—"
       className={cn(className)}
@@ -70,7 +121,7 @@ const NewCustomersCard: React.FC<Props> = ({ className, timeframe, range, countr
       <div className="flex items-center justify-end">
         <button
           type="button"
-          onClick={() => downloadCsv("new-customers.csv", data)}
+          onClick={() => downloadCsv("new-customers.csv", csvRows)}
           className="mb-2 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-slate-200 hover:bg-white/10"
         >
           Download data
@@ -79,11 +130,21 @@ const NewCustomersCard: React.FC<Props> = ({ className, timeframe, range, countr
 
       <div className="h-40 min-h-[10rem] md:h-52">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 12 }}>
+          <LineChart
+            data={data}
+            margin={{ top: 14, right: 16, bottom: 36, left: 34 }}
+          >
             <CartesianGrid stroke="#16a34a" strokeOpacity={0.15} vertical={false} />
 
-            <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="#9ca3af" tick={{ fontSize: 11 }}>
-              <Label value="Date" position="insideBottom" offset={-16} fill="#9ca3af" />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              stroke="#9ca3af"
+              tick={{ fontSize: 11 }}
+              tickMargin={8}
+            >
+              <Label value="Date" position="bottom" offset={12} fill="#9ca3af" />
             </XAxis>
 
             <YAxis
@@ -92,9 +153,17 @@ const NewCustomersCard: React.FC<Props> = ({ className, timeframe, range, countr
               stroke="#9ca3af"
               tick={{ fontSize: 11 }}
               tickFormatter={(v) => compact.format(v)}
-              width={46}
+              width={60}
+              tickMargin={8}
             >
-              <Label value="Users" angle={-90} position="insideLeft" fill="#9ca3af" />
+              {/* ✅ FIXED */}
+              <Label
+                value="New customers"
+                angle={-90}
+                position="left"
+                offset={8}
+                fill="#9ca3af"
+              />
             </YAxis>
 
             <Tooltip
@@ -107,15 +176,25 @@ const NewCustomersCard: React.FC<Props> = ({ className, timeframe, range, countr
               }}
             />
 
-            <Line type="monotone" dataKey="registered" stroke="#22c55e" strokeWidth={2.4} dot={false} />
-            <Line type="monotone" dataKey="pro" stroke="#fbbf24" strokeWidth={2.0} dot={false} />
+            {selectedSegments.map((seg) => (
+              <Line
+                key={seg}
+                type="monotone"
+                dataKey={seg}
+                name={SEGMENT_META[seg].label}
+                stroke={SEGMENT_META[seg].stroke}
+                strokeWidth={2.2}
+                dot={false}
+              />
+            ))}
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-300 md:grid-cols-2">
-        <span>Registered</span>
-        <span>Pro</span>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-slate-300">
+        {selectedSegments.map((seg) => (
+          <span key={seg}>{SEGMENT_META[seg].label}</span>
+        ))}
       </div>
     </LineChartCard>
   );

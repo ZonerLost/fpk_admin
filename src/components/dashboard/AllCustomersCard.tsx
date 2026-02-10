@@ -13,12 +13,20 @@ import BarChartCard from "../../shared/charts/BarChartCard";
 import { cn } from "../../shared/utils/cn";
 import { downloadCsv } from "./downloadCsv";
 import type { Timeframe } from "./DashboardFiltersBar";
+import {
+  SEGMENT_META,
+  type CustomerSegment,
+  segmentsSummary,
+} from "./customerSegments";
 
 type Props = {
   className?: string;
   timeframe: Timeframe;
   range: number;
   countriesLabel: string;
+
+  // ✅ NEW
+  selectedSegments: CustomerSegment[];
 };
 
 const compact = new Intl.NumberFormat(undefined, { notation: "compact" });
@@ -47,24 +55,72 @@ function makeLabels(tf: Timeframe, n: number) {
   return labels;
 }
 
-const AllCustomersCard: React.FC<Props> = ({ className, timeframe, range, countriesLabel }) => {
-  const subtitle = `All customers · ${countriesLabel} · ${timeframe} · last ${range}`;
-  const labels = React.useMemo(() => makeLabels(timeframe, Math.max(4, Math.min(range, 24))), [timeframe, range]);
+type Row = { label: string } & Record<
+  "registered" | "pro_monthly" | "pro_6_month" | "pro_12_month",
+  number
+>;
 
-  const data = React.useMemo(() => {
-    return labels.map((label, idx) => ({
-      label,
-      registered: 10000 + idx * 450,
-      pro: 800 + idx * 35,
-    }));
+const AllCustomersCard: React.FC<Props> = ({
+  className,
+  timeframe,
+  range,
+  countriesLabel,
+  selectedSegments,
+}) => {
+  const labels = React.useMemo(
+    () => makeLabels(timeframe, Math.max(4, Math.min(range, 24))),
+    [timeframe, range]
+  );
+
+  const data = React.useMemo<Row[]>(() => {
+    return labels.map((label, idx) => {
+      const registered = 10000 + idx * 450;
+      const proMonthly = 540 + idx * 18;
+      const pro6 = 271 + idx * 10;
+      const pro12 = 170 + idx * 7;
+
+      return {
+        label,
+        registered,
+        pro_monthly: proMonthly,
+        pro_6_month: pro6,
+        pro_12_month: pro12,
+      };
+    });
   }, [labels]);
 
+  const summary = segmentsSummary(selectedSegments);
+  const subtitle = `All customers · ${countriesLabel} · ${timeframe} · last ${range} · ${summary}`;
+
+  const last = data[data.length - 1];
+  const primaryStat = React.useMemo(() => {
+    if (!last) return "(mock)";
+    const total = selectedSegments.reduce((sum, k) => sum + (last[k] ?? 0), 0);
+    return `${compact.format(total)} (mock)`;
+  }, [last, selectedSegments]);
+
+  const csvRows = React.useMemo(() => {
+    return data.map((r) => {
+      const base: Record<string, string | number> = { label: r.label };
+      selectedSegments.forEach((k) => {
+        base[SEGMENT_META[k].label] = r[k];
+      });
+      return base;
+    });
+  }, [data, selectedSegments]);
+
   return (
-    <BarChartCard title="All Customers" primaryStat="(mock)" subtitle={subtitle} deltaText="—" className={cn(className)}>
+    <BarChartCard
+      title="All Customers"
+      primaryStat={primaryStat}
+      subtitle={subtitle}
+      deltaText="—"
+      className={cn(className)}
+    >
       <div className="flex items-center justify-end">
         <button
           type="button"
-          onClick={() => downloadCsv("all-customers.csv", data)}
+          onClick={() => downloadCsv("all-customers.csv", csvRows)}
           className="mb-2 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-slate-200 hover:bg-white/10"
         >
           Download data
@@ -73,11 +129,21 @@ const AllCustomersCard: React.FC<Props> = ({ className, timeframe, range, countr
 
       <div className="h-40 min-h-[10rem] md:h-52">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 12 }}>
+          <BarChart
+            data={data}
+            margin={{ top: 14, right: 16, bottom: 36, left: 34 }}
+          >
             <CartesianGrid stroke="#16a34a" strokeOpacity={0.1} vertical={false} />
 
-            <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="#9ca3af" tick={{ fontSize: 11 }}>
-              <Label value="Date" position="insideBottom" offset={-16} fill="#9ca3af" />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              stroke="#9ca3af"
+              tick={{ fontSize: 11 }}
+              tickMargin={8}
+            >
+              <Label value="Date" position="bottom" offset={12} fill="#9ca3af" />
             </XAxis>
 
             <YAxis
@@ -86,9 +152,16 @@ const AllCustomersCard: React.FC<Props> = ({ className, timeframe, range, countr
               stroke="#9ca3af"
               tick={{ fontSize: 11 }}
               tickFormatter={(v) => compact.format(v)}
-              width={46}
+              width={60}
+              tickMargin={8}
             >
-              <Label value="Customers" angle={-90} position="insideLeft" fill="#9ca3af" />
+              <Label
+                value="Customers"
+                angle={-90}
+                position="left"
+                offset={8}
+                fill="#9ca3af"
+              />
             </YAxis>
 
             <Tooltip
@@ -101,15 +174,24 @@ const AllCustomersCard: React.FC<Props> = ({ className, timeframe, range, countr
               }}
             />
 
-            <Bar dataKey="registered" radius={[6, 6, 0, 0]} fill="#22c55e" maxBarSize={26} />
-            <Bar dataKey="pro" radius={[6, 6, 0, 0]} fill="#fbbf24" maxBarSize={26} />
+            {selectedSegments.map((seg) => (
+              <Bar
+                key={seg}
+                dataKey={seg}
+                name={SEGMENT_META[seg].label}
+                radius={[6, 6, 0, 0]}
+                fill={SEGMENT_META[seg].fill}
+                maxBarSize={22}
+              />
+            ))}
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-300">
-        <span>Registered</span>
-        <span>Pro</span>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-slate-300">
+        {selectedSegments.map((seg) => (
+          <span key={seg}>{SEGMENT_META[seg].label}</span>
+        ))}
       </div>
     </BarChartCard>
   );

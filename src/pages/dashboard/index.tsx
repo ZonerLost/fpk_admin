@@ -1,108 +1,3 @@
-// import React from "react";
-// import PageShell from "../../shared/layout/PageShell";
-// import PageHeader from "../../shared/layout/PageHeader";
-
-// import DashboardStatsRow from "../../components/dashboard/DashboardStatsRow";
-// import DashboardFiltersBar, { type Timeframe } from "../../components/dashboard/DashboardFiltersBar";
-// import NewCustomersCard from "../../components/dashboard/NewCustomers";
-// import AllCustomersCard from "../../components/dashboard/AllCustomersCard";
-// import ActiveUsersCard from "../../components/dashboard/ActiveUserCard";
-// import ContentPopularityCard, { type ContentListLimit } from "../../components/dashboard/ContentPopularityCard";
-// import AcquisitionFunnelCard from "../../components/dashboard/AcquisitionFunnelCard";
-
-// const COUNTRIES = ["US", "UK", "CA", "AU", "PK"];
-
-// const DashboardPage: React.FC = () => {
-//   // Global-ish filters for dashboard metrics
-//   const [selectedCountries, setSelectedCountries] = React.useState<string[]>([]);
-//   const [timeframe, setTimeframe] = React.useState<Timeframe>("weekly");
-//   const [range, setRange] = React.useState<number>(4);
-
-//   // Active users extra filters
-//   const [activeUserType, setActiveUserType] =
-//     React.useState<"all" | "registered" | "pro">("all");
-//   const [activePlanType, setActivePlanType] =
-//     React.useState<"all" | "monthly" | "6m" | "12m">("all");
-
-//   // Content filters
-//   const [contentType, setContentType] =
-//     React.useState<"all" | "tactic" | "drill" | "match" | "live">("all");
-
-//   // content popularity list length filter
-//   const [contentListLimit, setContentListLimit] = React.useState<ContentListLimit>(20);
-
-//   const countriesLabel = React.useMemo(() => {
-//     return selectedCountries.length === 0 ? "All countries" : selectedCountries.join(", ");
-//   }, [selectedCountries]);
-
-//   return (
-//     <PageShell>
-//       <PageHeader
-//         title="Dashboard Overview"
-//         subtitle="Customer growth, subscriptions, engagement, and content performance."
-//       />
-
-//       {/* Global filters */}
-//       <div className="mt-5">
-//         <DashboardFiltersBar
-//           title="Global Dashboard Filters"
-//           countries={COUNTRIES}
-//           selectedCountries={selectedCountries}
-//           onChangeCountries={setSelectedCountries}
-//           timeframe={timeframe}
-//           onChangeTimeframe={setTimeframe}
-//           range={range}
-//           onChangeRange={setRange}
-//         />
-//       </div>
-
-//       {/* Stats */}
-//       <div className="mt-4">
-//         <DashboardStatsRow />
-//       </div>
-
-//       {/* Cards grid (mobile 1 col, tablet 2 col where useful) */}
-//       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
-//         <NewCustomersCard timeframe={timeframe} range={range} countriesLabel={countriesLabel} />
-//         <AllCustomersCard timeframe={timeframe} range={range} countriesLabel={countriesLabel} />
-//       </div>
-
-//       {/* Active users */}
-//       <div className="mt-6">
-//         <ActiveUsersCard
-//           timeframe={timeframe}
-//           range={range}
-//           countriesLabel={countriesLabel}
-//           userType={activeUserType}
-//           planType={activePlanType}
-//           onChangeUserType={setActiveUserType}
-//           onChangePlanType={setActivePlanType}
-//         />
-//       </div>
-
-//       {/* Content popularity */}
-//       <div className="mt-6">
-//         <ContentPopularityCard
-//           countriesLabel={countriesLabel}
-//           contentType={contentType}
-//           onChangeContentType={setContentType}
-//           listLimit={contentListLimit}
-//           onChangeListLimit={setContentListLimit}
-//           locale="ENG"
-//         />
-//       </div>
-
-//       {/* Funnel */}
-//       <div className="mt-6">
-//         <AcquisitionFunnelCard />
-//       </div>
-//     </PageShell>
-//   );
-// };
-
-// export default DashboardPage;
-
-
 import React from "react";
 import PageShell from "../../shared/layout/PageShell";
 import PageHeader from "../../shared/layout/PageHeader";
@@ -127,6 +22,13 @@ import ContentPopularityCard, {
 
 import AcquisitionFunnelCard from "../../components/dashboard/AcquisitionFunnelCard";
 
+import {
+  type CustomerSegment,
+  effectiveSegments,
+  parseSegmentsParam,
+  serializeSegmentsParam,
+} from "../../components/dashboard/customerSegments";
+
 const COUNTRIES = ["US", "UK", "CA", "AU", "PK"]; // later: load from API
 
 function iso(d: Date) {
@@ -147,6 +49,27 @@ const DashboardPage: React.FC = () => {
     return { startDate: iso(start), endDate: iso(end) };
   });
 
+  // [] means "All customer types", same behavior as countries.
+  const [selectedSegments, setSelectedSegments] = React.useState<CustomerSegment[]>(
+    () => parseSegmentsParam(new URLSearchParams(window.location.search).get("segments"))
+  );
+
+  const effectiveSelectedSegments = React.useMemo(
+    () => effectiveSegments(selectedSegments),
+    [selectedSegments]
+  );
+
+  // Keep URL in sync with selectedSegments without navigation.
+  React.useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    if (selectedSegments.length === 0) sp.delete("segments");
+    else sp.set("segments", serializeSegmentsParam(selectedSegments));
+
+    const qs = sp.toString();
+    const nextUrl = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash || ""}`;
+    window.history.replaceState({}, "", nextUrl);
+  }, [selectedSegments]);
+
   const countriesLabel = React.useMemo(() => {
     return selectedCountries.length === 0 ? "All countries" : selectedCountries.join(", ");
   }, [selectedCountries]);
@@ -156,13 +79,12 @@ const DashboardPage: React.FC = () => {
   const [compareMetric, setCompareMetric] = React.useState<"none" | "dau" | "wau" | "mau">("none");
 
   // Content popularity filters (client requested)
-  const [contentMode, setContentMode] = React.useState<PopularityMode>("top"); // ✅ top by default
+  const [contentMode, setContentMode] = React.useState<PopularityMode>("top");
   const [contentSource, setContentSource] = React.useState<ContentSource>("all");
   const [contentCategory, setContentCategory] = React.useState<ContentCategory>("all");
-  const [contentWeeks, setContentWeeks] = React.useState<number>(4); // default 4 weeks to match screenshot
+  const [contentWeeks, setContentWeeks] = React.useState<number>(4);
   const [contentSearch, setContentSearch] = React.useState<string>("");
-
-  const [contentListLimit, setContentListLimit] = React.useState<ContentListLimit>(20); // ✅ Top 20 default
+  const [contentListLimit, setContentListLimit] = React.useState<ContentListLimit>(20);
 
   return (
     <PageShell>
@@ -178,6 +100,8 @@ const DashboardPage: React.FC = () => {
           countries={COUNTRIES}
           selectedCountries={selectedCountries}
           onChangeCountries={setSelectedCountries}
+          selectedSegments={selectedSegments}
+          onChangeSegments={setSelectedSegments}
           periodMode={periodMode}
           onChangePeriodMode={setPeriodMode}
           timeframe={timeframe}
@@ -189,13 +113,25 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
+      {/* ✅ KPI row now driven by segments */}
       <div className="mt-4">
-        <DashboardStatsRow />
+        <DashboardStatsRow selectedSegments={effectiveSelectedSegments} />
       </div>
 
+      {/* ✅ Customer charts now driven by segments */}
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <NewCustomersCard timeframe={timeframe} range={range} countriesLabel={countriesLabel} />
-        <AllCustomersCard timeframe={timeframe} range={range} countriesLabel={countriesLabel} />
+        <NewCustomersCard
+          timeframe={timeframe}
+          range={range}
+          countriesLabel={countriesLabel}
+          selectedSegments={effectiveSelectedSegments}
+        />
+        <AllCustomersCard
+          timeframe={timeframe}
+          range={range}
+          countriesLabel={countriesLabel}
+          selectedSegments={effectiveSelectedSegments}
+        />
       </div>
 
       <div className="mt-6">

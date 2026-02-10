@@ -8,7 +8,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Label,
-  Legend,
 } from "recharts";
 import LineChartCard from "../../shared/charts/LineChartCard";
 import { cn } from "../../shared/utils/cn";
@@ -145,11 +144,21 @@ const ActiveUsersCard: React.FC<Props> = ({
 
       <div className="h-44 min-h-[11rem] md:h-56">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 12 }}>
+          <LineChart
+            data={data}
+            margin={{ top: 14, right: 16, bottom: 36, left: 34 }}
+          >
             <CartesianGrid stroke="#16a34a" strokeOpacity={0.15} vertical={false} />
 
-            <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="#9ca3af" tick={{ fontSize: 11 }}>
-              <Label value="Date" position="insideBottom" offset={-16} fill="#9ca3af" />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              stroke="#9ca3af"
+              tick={{ fontSize: 11 }}
+              tickMargin={8}
+            >
+              <Label value="Date" position="bottom" offset={12} fill="#9ca3af" />
             </XAxis>
 
             <YAxis
@@ -158,9 +167,16 @@ const ActiveUsersCard: React.FC<Props> = ({
               stroke="#9ca3af"
               tick={{ fontSize: 11 }}
               tickFormatter={(v) => compact.format(v)}
-              width={46}
+              width={60}
+              tickMargin={8}
             >
-              <Label value="Active users" angle={-90} position="insideLeft" fill="#9ca3af" />
+              <Label
+                value="Active users"
+                angle={-90}
+                position="left"
+                offset={8}
+                fill="#9ca3af"
+              />
             </YAxis>
 
             <Tooltip
@@ -172,8 +188,6 @@ const ActiveUsersCard: React.FC<Props> = ({
                 fontSize: 12,
               }}
             />
-
-            <Legend />
 
             <Line
               type="monotone"

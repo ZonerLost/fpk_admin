@@ -1,6 +1,12 @@
 import React from "react";
 import SectionCard from "../../shared/layout/SectionCard";
 import { cn } from "../../shared/utils/cn";
+import {
+  CUSTOMER_SEGMENTS,
+  SEGMENT_META,
+  type CustomerSegment,
+  uniqSegments,
+} from "./customerSegments";
 
 export type PeriodMode = "relative" | "absolute";
 export type Timeframe = "daily" | "weekly" | "monthly" | "yearly";
@@ -11,16 +17,20 @@ type Props = {
   selectedCountries: string[];
   onChangeCountries: (next: string[]) => void;
 
+  //  Customer type state: [] means ALL (same as countries)
+  selectedSegments: CustomerSegment[];
+  onChangeSegments: (next: CustomerSegment[]) => void;
+
   periodMode: PeriodMode;
   onChangePeriodMode: (m: PeriodMode) => void;
 
   timeframe: Timeframe;
   onChangeTimeframe: (tf: Timeframe) => void;
 
-  range: number; // relative length (last N units)
+  range: number;
   onChangeRange: (n: number) => void;
 
-  dateRange: DateRange; // absolute
+  dateRange: DateRange;
   onChangeDateRange: (r: DateRange) => void;
 
   title?: string;
@@ -35,17 +45,21 @@ const timeframeOptions: { value: Timeframe; label: string }[] = [
 ];
 
 function maxRangeFor(tf: Timeframe) {
-  if (tf === "daily") return 365; // allow last 365 days
-  if (tf === "weekly") return 104; // 2 years
-  if (tf === "monthly") return 48; // 4 years
-  return 10; // yearly
+  if (tf === "daily") return 365;
+  if (tf === "weekly") return 104;
+  if (tf === "monthly") return 48;
+  return 10;
 }
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-function useOutsideClick(ref: React.RefObject<HTMLElement | null>, onClose: () => void, when: boolean) {
+function useOutsideClick(
+  ref: React.RefObject<HTMLElement | null>,
+  onClose: () => void,
+  when: boolean
+) {
   React.useEffect(() => {
     if (!when) return;
     const handler = (e: MouseEvent) => {
@@ -63,6 +77,10 @@ const DashboardFiltersBar: React.FC<Props> = ({
   countries,
   selectedCountries,
   onChangeCountries,
+
+  selectedSegments,
+  onChangeSegments,
+
   periodMode,
   onChangePeriodMode,
   timeframe,
@@ -76,31 +94,39 @@ const DashboardFiltersBar: React.FC<Props> = ({
 }) => {
   const max = maxRangeFor(timeframe);
   const unitLabel =
-    timeframe === "daily" ? "days" : timeframe === "weekly" ? "weeks" : timeframe === "monthly" ? "months" : "years";
+    timeframe === "daily"
+      ? "days"
+      : timeframe === "weekly"
+      ? "weeks"
+      : timeframe === "monthly"
+      ? "months"
+      : "years";
 
-  // keep range valid when timeframe changes
   React.useEffect(() => {
     if (range > max) onChangeRange(max);
     if (range < 1) onChangeRange(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeframe]);
 
-  const pillBase = "rounded-full border px-3 py-1 text-[11px] font-medium md:text-xs transition";
-  const pillActiveCountry = "border-emerald-500/50 bg-emerald-500/10 text-emerald-200";
-  const pillActiveTime = "border-amber-400/60 bg-amber-400/10 text-amber-200";
+  const pillBase =
+    "rounded-full border px-3 py-1 text-[11px] font-medium md:text-xs transition";
+  const pillActive =
+    "border-emerald-500/50 bg-emerald-500/10 text-emerald-200";
+  const pillActiveTime =
+    "border-amber-400/60 bg-amber-400/10 text-amber-200";
   const pillInactive = "border-white/10 text-slate-300 hover:bg-white/5";
 
-  // -------- Country scalable picker (search + multi select) --------
-  const popRef = React.useRef<HTMLDivElement>(null);
-  const [open, setOpen] = React.useState(false);
-  const [q, setQ] = React.useState("");
-  useOutsideClick(popRef, () => setOpen(false), open);
+  // -------------------- Countries picker --------------------
+  const countryPopRef = React.useRef<HTMLDivElement>(null);
+  const [openCountries, setOpenCountries] = React.useState(false);
+  const [countryQuery, setCountryQuery] = React.useState("");
+  useOutsideClick(countryPopRef, () => setOpenCountries(false), openCountries);
 
   const filteredCountries = React.useMemo(() => {
-    const s = q.trim().toLowerCase();
+    const s = countryQuery.trim().toLowerCase();
     if (!s) return countries;
     return countries.filter((c) => c.toLowerCase().includes(s));
-  }, [countries, q]);
+  }, [countries, countryQuery]);
 
   const toggleCountry = (c: string) => {
     if (selectedCountries.includes(c)) {
@@ -117,7 +143,38 @@ const DashboardFiltersBar: React.FC<Props> = ({
       ? selectedCountries[0]
       : `${selectedCountries.length} selected`;
 
-  // -------- Absolute dates: basic validation --------
+  // -------------------- Customer type picker (same UX as countries) --------------------
+  const segPopRef = React.useRef<HTMLDivElement>(null);
+  const [openSegs, setOpenSegs] = React.useState(false);
+  const [segQuery, setSegQuery] = React.useState("");
+  useOutsideClick(segPopRef, () => setOpenSegs(false), openSegs);
+
+  // ✅ keep UI state as-is: [] means ALL
+  const segs = React.useMemo(() => uniqSegments(selectedSegments), [selectedSegments]);
+  const segsIsAll = segs.length === 0;
+
+  const setSegmentsSafe = (next: CustomerSegment[]) => {
+    onChangeSegments(uniqSegments(next)); // can be []
+  };
+
+  const toggleSegment = (seg: CustomerSegment) => {
+    const has = segs.includes(seg);
+    const next = has ? segs.filter((s) => s !== seg) : [...segs, seg];
+    setSegmentsSafe(next); // if becomes empty => All (same as countries)
+  };
+
+  const segSummary =
+    segs.length === 0 ? "All customer types" : `${segs.length} selected`;
+
+  const filteredSegs = React.useMemo(() => {
+    const q = segQuery.trim().toLowerCase();
+    if (!q) return CUSTOMER_SEGMENTS;
+    return CUSTOMER_SEGMENTS.filter((s) =>
+      SEGMENT_META[s].label.toLowerCase().includes(q)
+    );
+  }, [segQuery]);
+
+  // -------------------- Absolute dates validation --------------------
   const onChangeStart = (startDate: string) => {
     const endDate = dateRange.endDate;
     if (endDate && startDate && startDate > endDate) {
@@ -139,8 +196,9 @@ const DashboardFiltersBar: React.FC<Props> = ({
   return (
     <SectionCard title={title} className={cn("min-w-0", className)}>
       <div className="grid gap-4 lg:grid-cols-12 lg:items-start">
-        {/* Countries */}
+        {/* Left column: Country + Customer type */}
         <div className="lg:col-span-6">
+          {/* Country header */}
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-slate-300">Country</span>
             {selectedCountries.length > 0 && (
@@ -154,12 +212,12 @@ const DashboardFiltersBar: React.FC<Props> = ({
             )}
           </div>
 
+          {/* Country row */}
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            {/* Summary button opens scalable picker */}
-            <div className="relative" ref={popRef}>
+            <div className="relative" ref={countryPopRef}>
               <button
                 type="button"
-                onClick={() => setOpen((v) => !v)}
+                onClick={() => setOpenCountries((v) => !v)}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold",
                   "border-white/10 bg-white/5 text-slate-100 hover:bg-white/10"
@@ -169,12 +227,12 @@ const DashboardFiltersBar: React.FC<Props> = ({
                 <span className="text-slate-400">▾</span>
               </button>
 
-              {open && (
+              {openCountries && (
                 <div className="absolute z-50 mt-2 w-[320px] max-w-[92vw] rounded-2xl border border-white/10 bg-slate-950 p-3 shadow-2xl">
                   <div className="flex items-center gap-2">
                     <input
-                      value={q}
-                      onChange={(e) => setQ(e.target.value)}
+                      value={countryQuery}
+                      onChange={(e) => setCountryQuery(e.target.value)}
                       placeholder="Search countries…"
                       className="h-10 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-xs text-slate-100 outline-none"
                     />
@@ -193,11 +251,15 @@ const DashboardFiltersBar: React.FC<Props> = ({
                       onClick={() => onChangeCountries([])}
                       className={cn(
                         "flex w-full items-center justify-between border-b border-white/5 px-3 py-2 text-xs",
-                        selectedCountries.length === 0 ? "text-emerald-200" : "text-slate-200 hover:bg-white/5"
+                        selectedCountries.length === 0
+                          ? "text-emerald-200"
+                          : "text-slate-200 hover:bg-white/5"
                       )}
                     >
                       <span>All countries</span>
-                      <span className="text-slate-400">{selectedCountries.length === 0 ? "✓" : ""}</span>
+                      <span className="text-slate-400">
+                        {selectedCountries.length === 0 ? "✓" : ""}
+                      </span>
                     </button>
 
                     {filteredCountries.map((c) => {
@@ -222,25 +284,136 @@ const DashboardFiltersBar: React.FC<Props> = ({
               )}
             </div>
 
-            {/* Show selected chips (small) */}
             {selectedCountries.slice(0, 6).map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => toggleCountry(c)}
-                className={cn(pillBase, pillActiveCountry)}
+                className={cn(pillBase, pillActive)}
                 title="Click to remove"
               >
                 {c} ✕
               </button>
             ))}
             {selectedCountries.length > 6 && (
-              <span className="text-[11px] text-slate-400">+{selectedCountries.length - 6} more</span>
+              <span className="text-[11px] text-slate-400">
+                +{selectedCountries.length - 6} more
+              </span>
             )}
+          </div>
+
+          {/* Customer type header */}
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-slate-300">
+              Customer type
+            </span>
+
+            {/* ✅ show clear only if user selected something */}
+            {segs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSegmentsSafe([])} // [] = All
+                className="text-[11px] font-semibold text-slate-300 hover:text-slate-100"
+              >
+                Clear ({segs.length})
+              </button>
+            )}
+          </div>
+
+          {/* Customer type row (same as country) */}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="relative" ref={segPopRef}>
+              <button
+                type="button"
+                onClick={() => setOpenSegs((v) => !v)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold",
+                  "border-white/10 bg-white/5 text-slate-100 hover:bg-white/10"
+                )}
+              >
+                <span>{segSummary}</span>
+                <span className="text-slate-400">▾</span>
+              </button>
+
+              {openSegs && (
+                <div className="absolute z-50 mt-2 w-[320px] max-w-[92vw] rounded-2xl border border-white/10 bg-slate-950 p-3 shadow-2xl">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={segQuery}
+                      onChange={(e) => setSegQuery(e.target.value)}
+                      placeholder="Search customer types…"
+                      className="h-10 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-xs text-slate-100 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSegmentsSafe([])} // [] = All
+                      className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-slate-200 hover:bg-white/10"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  <div className="mt-3 max-h-64 overflow-auto rounded-xl border border-white/5">
+                    {/* All row */}
+                    <button
+                      type="button"
+                      onClick={() => setSegmentsSafe([])} // [] = All
+                      className={cn(
+                        "flex w-full items-center justify-between border-b border-white/5 px-3 py-2 text-xs",
+                        segsIsAll ? "text-emerald-200" : "text-slate-200 hover:bg-white/5"
+                      )}
+                    >
+                      <span>All customer types</span>
+                      <span className="text-slate-400">{segsIsAll ? "✓" : ""}</span>
+                    </button>
+
+                    {filteredSegs.map((seg) => {
+                      const active = segs.includes(seg);
+                      return (
+                        <button
+                          key={seg}
+                          type="button"
+                          onClick={() => toggleSegment(seg)}
+                          className={cn(
+                            "flex w-full items-center justify-between px-3 py-2 text-xs hover:bg-white/5",
+                            active ? "text-emerald-200" : "text-slate-200"
+                          )}
+                        >
+                          <span>{SEGMENT_META[seg].label}</span>
+                          <span className="text-slate-400">{active ? "✓" : ""}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ✅ chips only when user selected something */}
+            {segs.slice(0, 6).map((seg) => (
+              <button
+                key={seg}
+                type="button"
+                onClick={() => toggleSegment(seg)}
+                className={cn(pillBase, pillActive)}
+                title="Click to remove"
+              >
+                {SEGMENT_META[seg].label} ✕
+              </button>
+            ))}
+            {segs.length > 6 && (
+              <span className="text-[11px] text-slate-400">
+                +{segs.length - 6} more
+              </span>
+            )}
+          </div>
+
+          <div className="mt-1 text-[11px] text-slate-400">
+            Applies to customer KPIs + customer charts.
           </div>
         </div>
 
-        {/* Period mode + timeframe */}
+        {/* Period */}
         <div className="lg:col-span-3">
           <span className="text-xs font-semibold text-slate-300">Period</span>
 
@@ -289,7 +462,7 @@ const DashboardFiltersBar: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Length or Date range */}
+        {/* Length / Date range */}
         <div className="lg:col-span-3">
           <span className="text-xs font-semibold text-slate-300">
             {periodMode === "relative" ? "Length" : "Date Range"}
