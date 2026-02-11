@@ -25,7 +25,7 @@ type Props = {
   range: number;
   countriesLabel: string;
 
-  // ✅ NEW
+  //  NEW
   selectedSegments: CustomerSegment[];
 };
 

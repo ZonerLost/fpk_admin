@@ -33,6 +33,7 @@ type DataTableProps<T> = {
    * Container styles (no horizontal scroll by default)
    */
   containerClassName?: string;
+  tableClassName?: string;
 
   /**
    * Row click (optional)
@@ -71,11 +72,12 @@ export default function DataTable<T>({
   data,
   getRowKey,
   containerClassName,
+  tableClassName,
   onRowClick,
 }: DataTableProps<T>) {
   return (
     <div className={cn("w-full", containerClassName)}>
-      <table className="w-full table-fixed border-separate border-spacing-0">
+      <table className={cn("w-full table-fixed border-separate border-spacing-0", tableClassName)}>
         <thead>
           <tr className="bg-white/5">
             {columns.map((col) => (

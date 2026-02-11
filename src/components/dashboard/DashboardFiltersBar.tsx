@@ -149,7 +149,7 @@ const DashboardFiltersBar: React.FC<Props> = ({
   const [segQuery, setSegQuery] = React.useState("");
   useOutsideClick(segPopRef, () => setOpenSegs(false), openSegs);
 
-  // ✅ keep UI state as-is: [] means ALL
+  // keep UI state as-is: [] means ALL
   const segs = React.useMemo(() => uniqSegments(selectedSegments), [selectedSegments]);
   const segsIsAll = segs.length === 0;
 
@@ -308,7 +308,7 @@ const DashboardFiltersBar: React.FC<Props> = ({
               Customer type
             </span>
 
-            {/* ✅ show clear only if user selected something */}
+            {/* show clear only if user selected something */}
             {segs.length > 0 && (
               <button
                 type="button"
@@ -389,7 +389,7 @@ const DashboardFiltersBar: React.FC<Props> = ({
               )}
             </div>
 
-            {/* ✅ chips only when user selected something */}
+            {/*  chips only when user selected something */}
             {segs.slice(0, 6).map((seg) => (
               <button
                 key={seg}

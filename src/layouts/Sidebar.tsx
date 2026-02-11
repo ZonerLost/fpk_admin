@@ -5,6 +5,7 @@ import {
   // FiFileText,
   FiUsers,
   FiBarChart2,
+  FiMessageSquare,
   FiSettings,
   FiLogOut,
 } from "react-icons/fi";
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   // { label: "Content Management", to: "/content", icon: FiFileText },
   { label: "Users", to: "/users", icon: FiUsers },
   { label: "Academy Sessions", to: "/academysessions", icon: FiBarChart2 },
+  { label: "Surveys & Feedback", to: "/surveys-feedback", icon: FiMessageSquare },
   { label: "Settings", to: "/settings", icon: FiSettings },
 ];
 

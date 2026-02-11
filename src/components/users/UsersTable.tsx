@@ -202,9 +202,12 @@ const UsersTable: React.FC<Props> = ({ users, onView, onEdit, onDelete }) => {
     {
       id: "name",
       header: "Name",
+      width: "18rem",
       cell: (row) => (
-        <div className="flex min-w-0 items-center gap-3">
-          <Avatar src={row.avatarUrl} name={row.name} size="md" variant="circle" />
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-[56px] shrink-0">
+            <Avatar src={row.avatarUrl} name={row.name} size={40} />
+          </div>
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-sm font-medium text-slate-100">{row.name}</span>
             <span className="truncate text-xs text-slate-400">{row.email || row.phone || "N/A"}</span>

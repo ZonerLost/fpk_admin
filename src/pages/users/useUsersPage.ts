@@ -1,11 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { downloadCsv } from "../../shared/utils/downloadCsv";
 import type { UserItem, SupportAction } from "../../components/users/types";
 import type { UsersFiltersState } from "../../components/users/UsersFiltersBar";
+import { COUNTRIES, LANGUAGES } from "../../shared/constant/geo";
 
 const MAX_ONSCREEN = 5000;
 const DISPLAY_LIMIT_OPTIONS = [100, 500, 1000, 5000] as const;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+
+const DEFAULT_FILTERS: UsersFiltersState = {
+  country: "All",
+  language: "All",
+  status: "All",
+  lastActive: "All Time",
+  sort: "joined_desc",
+};
 
 function daysBetween(aIso?: string, bIso?: string) {
   if (!aIso || !bIso) return 0;
@@ -45,21 +55,12 @@ function withinWindow(lastActiveLabel: string, windowKey: UsersFiltersState["las
 }
 
 function hasAnyFilterSelected(f: UsersFiltersState) {
-  return (
-    f.country !== "All" ||
-    f.language !== "All" ||
-    f.status !== "All" ||
-    f.lastActive !== "All Time"
-  );
+  return f.country !== "All" || f.language !== "All" || f.status !== "All" || f.lastActive !== "All Time";
 }
 
 function countSelectedFilters(f: UsersFiltersState) {
-  return [
-    f.country !== "All",
-    f.language !== "All",
-    f.status !== "All",
-    f.lastActive !== "All Time",
-  ].filter(Boolean).length;
+  return [f.country !== "All", f.language !== "All", f.status !== "All", f.lastActive !== "All Time"].filter(Boolean)
+    .length;
 }
 
 function statusMatches(user: UserItem, status: UsersFiltersState["status"]) {
@@ -71,101 +72,154 @@ function statusMatches(user: UserItem, status: UsersFiltersState["status"]) {
 }
 
 function getProStart(user: UserItem): string | undefined {
-  // Prefer membership history if exists
   const hist = user.membershipHistory ?? [];
   const active = [...hist].sort((a, b) => (a.startedAt > b.startedAt ? -1 : 1))[0];
   if (active?.startedAt) return active.startedAt;
 
-  // fallback: treat join as pro start if user is pro (mock)
   if (user.accountStatus !== "Registered") return user.joinedAt;
   return undefined;
 }
 
-const initialUsers: UserItem[] = [
-  {
-    id: "1",
-    userId: "USR-8421",
-    name: "Alex Gunnar",
-    email: "alex.g@example.com",
-    country: "Norway",
-    language: "EN",
-    registrationStatus: "Registered",
-    emailVerified: true,
-    accountStatus: "PRO_6M",
-    planStatus: "Pro",
-    subscriptionState: "Active",
-    joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 180).toISOString(),
-    xpPoints: 12500,
-    lastActiveLabel: "2 hours ago",
-    avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
-    evidence: {
-      lastLoginAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-      lastActiveAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      lastPaymentAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
-      auditLogCount: 14,
-    },
-    membershipHistory: [
-      {
-        id: "m1",
-        status: "PRO_6M",
-        subscriptionState: "Active",
-        startedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60).toISOString(),
-      },
-    ],
-    paymentHistory: [
-      {
-        id: "p1",
-        amount: 49.99,
-        currency: "USD",
-        paidAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
-        status: "Paid",
-        providerRef: "pi_123",
-      },
-    ],
-  },
-  {
-    id: "2",
-    userId: "USR-3198",
-    name: "Sofia Rey",
-    phone: "+34 123 456 789",
-    country: "Spain",
-    language: "ES",
-    registrationStatus: "Registered",
-    emailVerified: false,
-    accountStatus: "PRO_1M",
-    planStatus: "Pro",
-    subscriptionState: "PastDue",
-    joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40).toISOString(),
-    xpPoints: 4200,
-    lastActiveLabel: "1 day ago",
-    avatarUrl: "https://randomuser.me/api/portraits/women/45.jpg",
-    evidence: {
-      lastLoginAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
-      lastActiveAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-      lastPaymentAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 35).toISOString(),
-      lastErrorAt: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(),
-      auditLogCount: 3,
-    },
-  },
+// ---------- mock users for pagination + default list ----------
+const NAMES = [
+  "Alex Gunnar",
+  "Sofia Rey",
+  "Liam Carter",
+  "Noah Khan",
+  "Emma Stone",
+  "Mia Ahmed",
+  "Ava Brown",
+  "Lucas Silva",
+  "Ethan Ali",
+  "Olivia Kim",
+  "Isabella Noor",
+  "James Miller",
+  "Benjamin Lee",
+  "Amelia Jones",
+  "Charlotte Davis",
+  "Henry Wilson",
+  "Zara Malik",
+  "Daniel Taylor",
+  "Hannah White",
+  "Aiden Walker",
 ];
+
+function pick<T>(arr: readonly T[], i: number) {
+  return arr[i % arr.length];
+}
+
+function makeLastActiveLabel(i: number) {
+  const presets = ["5 mins ago", "45 mins ago", "2 hours ago", "8 hours ago", "1 day ago", "3 days ago", "1 week ago"];
+  return presets[i % presets.length];
+}
+
+function makeMockUsers(total = 42): UserItem[] {
+  const now = Date.now();
+
+  const safeCountries = COUNTRIES?.length ? COUNTRIES : ["US", "UK", "CA", "AU", "PK"];
+  const safeLangs = LANGUAGES?.length ? LANGUAGES : ["EN", "ES", "FR", "DE", "UR"];
+
+  return Array.from({ length: total }).map((_, idx) => {
+    const name = pick(NAMES, idx);
+    const joinedAt = new Date(now - idx * 1000 * 60 * 60 * 18).toISOString(); // every ~18h older
+    const country = pick(safeCountries, idx);
+    const language = pick(safeLangs, idx);
+
+    const registrationStatus = idx % 9 === 0 ? "Unregistered" : "Registered";
+    const accountStatus: UserItem["accountStatus"] =
+      registrationStatus === "Unregistered"
+        ? "Registered"
+        : idx % 8 === 0
+        ? "PRO_12M"
+        : idx % 5 === 0
+        ? "PRO_6M"
+        : idx % 3 === 0
+        ? "PRO_1M"
+        : "Registered";
+
+    const planStatus: UserItem["planStatus"] = accountStatus === "Registered" ? "Free" : "Pro";
+
+    const subscriptionState: UserItem["subscriptionState"] =
+      planStatus === "Free" ? "None" : idx % 7 === 0 ? "PastDue" : "Active";
+
+    const emailVerified = idx % 4 !== 0;
+
+    const lastActiveLabel = makeLastActiveLabel(idx);
+
+    return {
+      id: String(idx + 1),
+      userId: `USR-${String(1000 + idx).padStart(4, "0")}`,
+      name,
+      email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
+      phone: idx % 6 === 0 ? `+1 555 00${idx}` : undefined,
+      avatarUrl: idx % 3 === 0 ? `https://randomuser.me/api/portraits/${idx % 2 ? "women" : "men"}/${(idx % 70) + 1}.jpg` : undefined,
+
+      country,
+      language,
+
+      registrationStatus,
+      emailVerified,
+
+      accountStatus,
+      planStatus,
+      subscriptionState,
+
+      joinedAt,
+      xpPoints: 2000 + idx * 210,
+
+      lastActiveLabel,
+
+      evidence: {
+        lastLoginAt: new Date(now - idx * 1000 * 60 * 60 * 6).toISOString(),
+        lastActiveAt: new Date(now - idx * 1000 * 60 * 60 * 2).toISOString(),
+        lastPaymentAt: planStatus === "Pro" ? new Date(now - idx * 1000 * 60 * 60 * 24 * 10).toISOString() : undefined,
+        lastErrorAt: idx % 10 === 0 ? new Date(now - idx * 1000 * 60 * 60 * 3).toISOString() : undefined,
+        auditLogCount: idx % 9,
+      },
+
+      membershipHistory:
+        accountStatus !== "Registered"
+          ? [
+              {
+                id: `m-${idx + 1}`,
+                status: accountStatus,
+                subscriptionState: subscriptionState === "None" ? "Active" : (subscriptionState as any),
+                startedAt: new Date(now - idx * 1000 * 60 * 60 * 24 * 30).toISOString(),
+              },
+            ]
+          : [],
+
+      paymentHistory:
+        accountStatus !== "Registered"
+          ? [
+              {
+                id: `p-${idx + 1}`,
+                amount: accountStatus === "PRO_12M" ? 99.99 : accountStatus === "PRO_6M" ? 59.99 : 12.99,
+                currency: "USD",
+                paidAt: new Date(now - idx * 1000 * 60 * 60 * 24 * 10).toISOString(),
+                status: idx % 7 === 0 ? "Failed" : "Paid",
+                providerRef: `pi_${idx + 100}`,
+              },
+            ]
+          : [],
+    };
+  });
+}
 
 export function useUsersPage() {
   const [search, setSearch] = React.useState("");
 
-  const [filtersDraft, setFiltersDraft] = React.useState<UsersFiltersState>({
-    country: "All",
-    language: "All",
-    status: "All",
-    lastActive: "All Time",
-    sort: "joined_desc",
-  });
+  const [filtersDraft, setFiltersDraft] = React.useState<UsersFiltersState>(DEFAULT_FILTERS);
 
-  const [filtersApplied, setFiltersApplied] = React.useState<UsersFiltersState | null>(null);
+  // ✅ IMPORTANT: show users by default (no "apply required" gate)
+  const [filtersApplied, setFiltersApplied] = React.useState<UsersFiltersState>(DEFAULT_FILTERS);
 
-  const [users, setUsers] = React.useState<UserItem[]>([]);
+  // ✅ Load users immediately so table shows (latest signups view)
+  const [users, setUsers] = React.useState<UserItem[]>(() => makeMockUsers(48));
+
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10);
-  const [displayLimit, setDisplayLimit] = React.useState<(typeof DISPLAY_LIMIT_OPTIONS)[number]>(500);
+  const [displayLimit, setDisplayLimit] = React.useState<(typeof DISPLAY_LIMIT_OPTIONS)[number]>(100);
 
   const [selectedUser, setSelectedUser] = React.useState<UserItem | null>(null);
   const [isViewOpen, setIsViewOpen] = React.useState(false);
@@ -185,26 +239,24 @@ export function useUsersPage() {
     setCurrentPage(1);
   };
 
+  // ✅ Apply = commit draft -> applied (like before)
   const applyFilters = () => {
     setFiltersApplied(filtersDraft);
     setCurrentPage(1);
 
-    // ✅ Production: fetch backend with filtersDraft (country/language/status/lastActive/sort) + pagination
-    if (users.length === 0) setUsers(initialUsers);
+    // Production: fetch backend here using filtersDraft + pagination
+    // For now: dataset already loaded.
   };
 
+  // ✅ Clear should reset back to latest signups view (not empty)
   const clearFilters = () => {
-    setFiltersDraft({
-      country: "All",
-      language: "All",
-      status: "All",
-      lastActive: "All Time",
-      sort: "joined_desc",
-    });
-    setFiltersApplied(null);
-    setUsers([]);
+    setFiltersDraft(DEFAULT_FILTERS);
+    setFiltersApplied(DEFAULT_FILTERS);
     setSearch("");
     setCurrentPage(1);
+
+    // keep users available; if empty for any reason, re-seed
+    setUsers((prev) => (prev.length ? prev : makeMockUsers(48)));
   };
 
   const handleViewUser = (user: UserItem) => {
@@ -235,9 +287,8 @@ export function useUsersPage() {
   };
 
   const filteredUsers = React.useMemo(() => {
-    if (!filtersApplied) return [];
-
     const q = deferredSearch.trim().toLowerCase();
+    const f = filtersApplied;
 
     let list = users.filter((user) => {
       if (q) {
@@ -257,10 +308,10 @@ export function useUsersPage() {
         if (!haystack.includes(q)) return false;
       }
 
-      if (filtersApplied.country !== "All" && user.country !== filtersApplied.country) return false;
-      if (filtersApplied.language !== "All" && user.language !== filtersApplied.language) return false;
-      if (!statusMatches(user, filtersApplied.status)) return false;
-      if (!withinWindow(user.lastActiveLabel, filtersApplied.lastActive)) return false;
+      if (f.country !== "All" && user.country !== f.country) return false;
+      if (f.language !== "All" && user.language !== f.language) return false;
+      if (!statusMatches(user, f.status)) return false;
+      if (!withinWindow(user.lastActiveLabel, f.lastActive)) return false;
 
       return true;
     });
@@ -321,7 +372,7 @@ export function useUsersPage() {
   };
 
   const selectedCount = countSelectedFilters(filtersDraft);
-  const isUnfilteredCohort = filtersApplied ? !hasAnyFilterSelected(filtersApplied) : false;
+  const isUnfilteredCohort = !hasAnyFilterSelected(filtersApplied);
 
   const brazePayload = React.useMemo(() => {
     return {
@@ -331,12 +382,6 @@ export function useUsersPage() {
   }, [filtersApplied, limitedUsers]);
 
   const onSupportAction = async (userId: string, action: SupportAction) => {
-    //  Production examples:
-    // POST /api/admin/users/:id/resend-verification
-    // POST /api/admin/users/:id/reset-password
-    // POST /api/admin/users/:id/sync-billing
-    // POST /api/admin/users/:id/grant-pro { plan: "PRO_1M", days: 30 }
-    // POST /api/admin/users/:id/revoke-sessions
     console.log("SUPPORT ACTION:", { userId, action });
   };
 

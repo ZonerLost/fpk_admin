@@ -11,6 +11,7 @@ import DashboardPage from "./pages/dashboard/index";
 import ContentManagementPage from "./pages/content-management/index";
 import UsersPage from "./pages/users/index";
 import AcedamySessionsPage from "./pages/Academy-Sessions/index";
+import { SurveysFeedbackPage } from "./pages/surveys-feedback/index";
 import SettingsPage from "./pages/settings/index";
 import LoginPage from "./pages/auth/LoginPage";
 
@@ -36,6 +37,8 @@ const App: React.FC = () => {
               <Route path="/content" element={<ContentManagementPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/academysessions" element={<AcedamySessionsPage />} />
+              <Route path="/surveys-feedback" element={<SurveysFeedbackPage />} />
+              <Route path="/surveys" element={<Navigate to="/surveys-feedback" replace />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
