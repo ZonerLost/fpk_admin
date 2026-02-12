@@ -34,7 +34,7 @@ const SurveysFeedbackFiltersBar: React.FC<Props> = ({
   showUserType = true,
 }) => {
   return (
-    <div className="flex flex-wrap items-end gap-3">
+    <div className="flex w-full flex-wrap items-end gap-3">
       <div className="min-w-[150px] flex-1">
         <label className="mb-1 block text-[11px] font-medium text-white/70 md:text-xs">
           Country

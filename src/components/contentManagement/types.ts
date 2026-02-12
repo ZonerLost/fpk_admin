@@ -15,12 +15,6 @@ export type ContentSourceType = "link" | "file";
 /** Thumbnail source */
 export type ThumbnailSourceType = "url" | "file";
 
-/**
- * Purpose answers:
- * - Learn thumbnails
- * - Intro assets
- * - Content per section (Learn/Train/Academy)
- */
 export type ContentPurpose =
   | "learn_thumbnail"
   | "intro_asset"
@@ -62,7 +56,7 @@ export interface ContentItem {
   isFreeForRegistered: boolean;
   isAcademyFreeForRegistered: boolean;
 
-  /** ✅ New: no-hurdle onboarding (typically Month 1 / Week 1) */
+  /**  New: no-hurdle onboarding (typically Month 1 / Week 1) */
   isFreeForEveryone?: boolean;
 
   /** Country + language */

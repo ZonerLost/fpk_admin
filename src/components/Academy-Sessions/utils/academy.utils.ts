@@ -94,11 +94,6 @@ export function formatReleaseDisplay(country: string, date: string, time: string
   const tz = getTimeZoneForCountry(country);
   return `${prettyUtcDate(date)} \u00b7 ${time} (local, ${tz})`;
 }
-
-/**
- * Enforce: only one per (week,country,language) can have freeForRegistered=true.
- * If the incoming item is freeForRegistered, we auto-disable others in that group.
- */
 export function applyFreeForRegisteredUniqueness(
   items: AcademyContentItem[],
   incoming: AcademyContentItem

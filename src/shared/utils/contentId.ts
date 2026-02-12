@@ -9,10 +9,6 @@ export type ContentPurposeIdKey =
   | "learn_thumbnail"
   | "intro_asset";
 
-/**
- * PURPOSE -> prefix
- * (keeps your original logic exactly)
- */
 export function prefixFromPurpose(purpose: ContentPurposeIdKey): ContentIdPrefix {
   if (purpose === "train_content") return "TR";
   if (purpose === "learn_content") return "LR";
@@ -23,11 +19,6 @@ export function prefixFromPurpose(purpose: ContentPurposeIdKey): ContentIdPrefix
   return "AC";
 }
 
-/**
- * UI/contentType -> prefix
- * (keeps your second-file mapping logic)
- * Adjust cases to match your backend categories.
- */
 export function prefixFromContentType(contentType: string): ContentIdPrefix {
   switch (contentType) {
     case "tactic":
@@ -46,18 +37,11 @@ export function prefixFromContentType(contentType: string): ContentIdPrefix {
 /* Formatting                                                                  */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Bare ID (your original): TR00001
- */
 export function formatContentId(prefix: ContentIdPrefix, seq: number, locale?: ContentLocale) {
   const n = String(Math.max(0, seq)).padStart(5, "0");
   return locale ? `${prefix}${n}(${locale})` : `${prefix}${n}`;
 }
 
-/**
- * Localized ID (your other file): TR00001(ENG)
- * Default locale = "ENG" (same as your second file)
- */
 export function formatContentIdWithLocale(
   prefix: ContentIdPrefix,
   seq: number,
@@ -73,11 +57,7 @@ export function formatContentIdWithLocale(
 const BARE_ID_RE = /^(TR|LR|AC)(\d{5})$/i;
 const LOCALE_ID_RE = /^(TR|LR|AC)(\d{5})\(([^)]+)\)$/i;
 
-/**
- * Returns sequence for BOTH:
- * - TR00001
- * - TR00001(ENG)
- */
+
 export function parseContentSequence(contentId?: string | null): number | null {
   if (!contentId) return null;
   const s = contentId.trim();
@@ -90,11 +70,6 @@ export function parseContentSequence(contentId?: string | null): number | null {
 
   return null;
 }
-
-/**
- * Parse full parts (prefix/seq/locale).
- * locale will be null for bare IDs.
- */
 export function parseContentIdParts(contentId?: string | null): {
   prefix: ContentIdPrefix;
   seq: number;
@@ -124,23 +99,17 @@ export function parseContentIdParts(contentId?: string | null): {
   return null;
 }
 
-/**
- * Your original validator (strict bare only): TR00001
- */
+
 export function isContentId(s: string) {
   return BARE_ID_RE.test(s.trim());
 }
 
-/**
- * New validator for localized IDs: TR00001(ENG)
- */
+
 export function isContentIdWithLocale(s: string) {
   return LOCALE_ID_RE.test(s.trim());
 }
 
-/**
- * Convenience: accepts either bare or localized.
- */
+
 export function isAnyContentId(s: string) {
   const t = s.trim();
   return BARE_ID_RE.test(t) || LOCALE_ID_RE.test(t);

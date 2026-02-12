@@ -39,11 +39,7 @@ type Props = {
   defaultCountry?: string; // "Germany" etc
   defaultLanguage?: string; // "EN" etc
 
-  /**
-   * Parent decides whether to create a new record or update an existing one.
-   * - For create: parent generates id + sets responsesCount=0
-   * - For edit: parent merges changes into existing record
-   */
+
   onSave: (draft: SurveyVariantDraft) => void;
 };
 

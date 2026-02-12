@@ -19,12 +19,6 @@ const GamificationSettingsSection: React.FC = () => {
     { id: "b1", name: "Consistency Starter", rule: "Complete 3 weekly releases in a week", iconUrl: "" },
     { id: "b2", name: "Weekend Warrior", rule: "Complete 2 sessions on weekends", iconUrl: "" },
   ]);
-
-  // NOTE (Lucas - lucas-himsl@gmx.de):
-  // - We should store badges in the backend with stable IDs and versioning (so badge rules can evolve).
-  // - Icons should be uploaded to storage (S3/GCS) rather than raw URLs, with validation + caching headers.
-  // - Awarding should be computed server-side to prevent client-side spoofing.
-
   const updateBadge = (id: string, patch: Partial<BadgeDef>) => {
     setBadges((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
   };

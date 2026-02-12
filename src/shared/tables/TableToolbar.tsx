@@ -25,7 +25,7 @@ const TableToolbar: React.FC<TableToolbarProps> = ({
         )}
       </div>
       {filters && (
-        <div className="flex flex-wrap gap-2 text-xs md:text-sm">
+        <div className="w-full text-xs md:text-sm">
           {filters}
         </div>
       )}

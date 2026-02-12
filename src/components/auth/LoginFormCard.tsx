@@ -30,7 +30,7 @@ const LoginFormCard: React.FC<Props> = ({ onForgotPassword }) => {
     try {
       setIsSubmitting(true);
 
-      // 🔓 FAKE SIGN-IN / SIGN-UP (no backend yet)
+      // FAKE SIGN-IN / SIGN-UP (no backend yet)
       // You can replace this later with a real API call.
       login({
         token: "dummy-token", // fake token
