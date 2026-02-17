@@ -6,7 +6,8 @@ import SectionCard from "../../shared/layout/SectionCard";
 import { cn } from "../../shared/utils/cn";
 
 import FaqSettingsSection from "../settings/sections/faq/components/FaqSettingsSection";
-import ContentReleaseSettingsSection from "../settings/sections/content/components/ContentReleaseSettingsSection";
+// Kept for future use:
+// import ContentReleaseSettingsSection from "../settings/sections/content/components/ContentReleaseSettingsSection";
 import PricingSettingsSection from "../settings/sections/pricing/PricingSettingsSection";
 import LocalizationSettingsSection from "../../components/settings/LocalizationSettingsSection";
 import NotificationsSettingsSection from "../../components/settings/NotificationsSettingsSection";
@@ -15,7 +16,7 @@ import AdminRolesSettingsSection from "../../components/settings/AdminRole/Admin
 import IntegrationsSettingsSection from "../../components/settings/IntegrationsSettingsSection";
 
 const SETTINGS_TABS = [
-  "Content & Release",
+  // "Content & Release", // Kept for future use
   "Plans & Pricing",
   "Legal",
   "Notifications",
@@ -89,14 +90,14 @@ const TabButton = React.memo(function TabButton({
 });
 
 const SettingsPage: React.FC = () => {
-  const initial = React.useMemo(() => getTabQuery() ?? "Content & Release", []);
+  const initial = React.useMemo(() => getTabQuery() ?? "Plans & Pricing", []);
   const [activeTab, setActiveTab] = React.useState<SettingsTab>(initial);
 
   const tabsWrapRef = React.useRef<HTMLDivElement | null>(null);
   const tabBtnRefs = React.useRef<
     Record<SettingsTab, HTMLButtonElement | null>
   >({
-    "Content & Release": null,
+    // "Content & Release": null, // Kept for future use
     "Plans & Pricing": null,
     Legal: null,
     Notifications: null,
@@ -216,6 +217,7 @@ const SettingsPage: React.FC = () => {
         {/* If KEEP_MOUNTED = false, only active tab renders (better perf).
             If true, all render but hidden (preserves state across tabs). */}
 
+        {/* Kept for future use:
         {(KEEP_MOUNTED || activeTab === "Content & Release") && (
           <div
             className={cn(
@@ -226,6 +228,7 @@ const SettingsPage: React.FC = () => {
             <ContentReleaseSettingsSection />
           </div>
         )}
+        */}
 
         {(KEEP_MOUNTED || activeTab === "Plans & Pricing") && (
           <div
