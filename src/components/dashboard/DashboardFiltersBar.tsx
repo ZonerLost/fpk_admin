@@ -17,6 +17,10 @@ type Props = {
   selectedCountries: string[];
   onChangeCountries: (next: string[]) => void;
 
+  languages: string[];
+  selectedLanguages: string[];
+  onChangeLanguages: (next: string[]) => void;
+
   //  Customer type state: [] means ALL (same as countries)
   selectedSegments: CustomerSegment[];
   onChangeSegments: (next: CustomerSegment[]) => void;
@@ -77,6 +81,9 @@ const DashboardFiltersBar: React.FC<Props> = ({
   countries,
   selectedCountries,
   onChangeCountries,
+  languages,
+  selectedLanguages,
+  onChangeLanguages,
 
   selectedSegments,
   onChangeSegments,
@@ -143,6 +150,33 @@ const DashboardFiltersBar: React.FC<Props> = ({
       ? selectedCountries[0]
       : `${selectedCountries.length} selected`;
 
+  // -------------------- Languages picker --------------------
+  const langPopRef = React.useRef<HTMLDivElement>(null);
+  const [openLanguages, setOpenLanguages] = React.useState(false);
+  const [languageQuery, setLanguageQuery] = React.useState("");
+  useOutsideClick(langPopRef, () => setOpenLanguages(false), openLanguages);
+
+  const filteredLanguages = React.useMemo(() => {
+    const s = languageQuery.trim().toLowerCase();
+    if (!s) return languages;
+    return languages.filter((lang) => lang.toLowerCase().includes(s));
+  }, [languages, languageQuery]);
+
+  const toggleLanguage = (lang: string) => {
+    if (selectedLanguages.includes(lang)) {
+      onChangeLanguages(selectedLanguages.filter((x) => x !== lang));
+    } else {
+      onChangeLanguages([...selectedLanguages, lang]);
+    }
+  };
+
+  const languagesSummary =
+    selectedLanguages.length === 0
+      ? "All languages"
+      : selectedLanguages.length === 1
+      ? selectedLanguages[0]
+      : `${selectedLanguages.length} selected`;
+
   // -------------------- Customer type picker (same UX as countries) --------------------
   const segPopRef = React.useRef<HTMLDivElement>(null);
   const [openSegs, setOpenSegs] = React.useState(false);
@@ -196,7 +230,7 @@ const DashboardFiltersBar: React.FC<Props> = ({
   return (
     <SectionCard title={title} className={cn("min-w-0", className)}>
       <div className="grid gap-4 lg:grid-cols-12 lg:items-start">
-        {/* Left column: Country + Customer type */}
+        {/* Left column: Country + Customer type + Language */}
         <div className="lg:col-span-6">
           {/* Country header */}
           <div className="flex items-center justify-between gap-2">
@@ -408,8 +442,113 @@ const DashboardFiltersBar: React.FC<Props> = ({
             )}
           </div>
 
+          {/* Language header */}
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-slate-300">Language</span>
+            {selectedLanguages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onChangeLanguages([])}
+                className="text-[11px] font-semibold text-slate-300 hover:text-slate-100"
+              >
+                Clear ({selectedLanguages.length})
+              </button>
+            )}
+          </div>
+
+          {/* Language row */}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="relative" ref={langPopRef}>
+              <button
+                type="button"
+                onClick={() => setOpenLanguages((v) => !v)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold",
+                  "border-white/10 bg-white/5 text-slate-100 hover:bg-white/10"
+                )}
+              >
+                <span>{languagesSummary}</span>
+                <span className="text-slate-400">▾</span>
+              </button>
+
+              {openLanguages && (
+                <div className="absolute z-50 mt-2 w-[320px] max-w-[92vw] rounded-2xl border border-white/10 bg-slate-950 p-3 shadow-2xl">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={languageQuery}
+                      onChange={(e) => setLanguageQuery(e.target.value)}
+                      placeholder="Search languages..."
+                      className="h-10 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-xs text-slate-100 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onChangeLanguages([])}
+                      className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-slate-200 hover:bg-white/10"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  <div className="mt-3 max-h-64 overflow-auto rounded-xl border border-white/5">
+                    <button
+                      type="button"
+                      onClick={() => onChangeLanguages([])}
+                      className={cn(
+                        "flex w-full items-center justify-between border-b border-white/5 px-3 py-2 text-xs",
+                        selectedLanguages.length === 0
+                          ? "text-emerald-200"
+                          : "text-slate-200 hover:bg-white/5"
+                      )}
+                    >
+                      <span>All languages</span>
+                      <span className="text-slate-400">
+                        {selectedLanguages.length === 0 ? "✓" : ""}
+                      </span>
+                    </button>
+
+                    {filteredLanguages.map((lang) => {
+                      const active = selectedLanguages.includes(lang);
+                      return (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => toggleLanguage(lang)}
+                          className={cn(
+                            "flex w-full items-center justify-between px-3 py-2 text-xs hover:bg-white/5",
+                            active ? "text-emerald-200" : "text-slate-200"
+                          )}
+                        >
+                          <span>{lang}</span>
+                          <span className="text-slate-400">{active ? "✓" : ""}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {selectedLanguages.slice(0, 6).map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => toggleLanguage(lang)}
+                className={cn(pillBase, pillActive)}
+                title="Click to remove"
+              >
+                {lang} ✕
+              </button>
+            ))}
+            {selectedLanguages.length > 6 && (
+              <span className="text-[11px] text-slate-400">
+                +{selectedLanguages.length - 6} more
+              </span>
+            )}
+          </div>
+
           <div className="mt-1 text-[11px] text-slate-400">
-            Applies to customer KPIs + customer charts.
+            Applies to customer KPIs + customer charts (including language-based
+            breakdowns).
           </div>
         </div>
 

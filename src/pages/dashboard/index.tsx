@@ -28,8 +28,10 @@ import {
   parseSegmentsParam,
   serializeSegmentsParam,
 } from "../../components/dashboard/customerSegments";
+import { buildCustomerDashboardRequestUrl } from "../../components/dashboard/dashboardQuery";
 
 const COUNTRIES = ["US", "UK", "CA", "AU", "PK"]; // later: load from API
+const LANGUAGES = ["English", "Arabic", "Spanish", "French", "German", "Italian",  "Portuguese", "Russian", "Chinese"]; // later: load from API
 
 function iso(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -38,6 +40,7 @@ function iso(d: Date) {
 const DashboardPage: React.FC = () => {
   // Global filters
   const [selectedCountries, setSelectedCountries] = React.useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = React.useState<string[]>([]);
   const [periodMode, setPeriodMode] = React.useState<PeriodMode>("relative");
   const [timeframe, setTimeframe] = React.useState<Timeframe>("weekly");
   const [range, setRange] = React.useState<number>(4);
@@ -73,6 +76,73 @@ const DashboardPage: React.FC = () => {
   const countriesLabel = React.useMemo(() => {
     return selectedCountries.length === 0 ? "All countries" : selectedCountries.join(", ");
   }, [selectedCountries]);
+  const languagesLabel = React.useMemo(() => {
+    return selectedLanguages.length === 0 ? "All languages" : selectedLanguages.join(", ");
+  }, [selectedLanguages]);
+
+  const customerKpisRequestUrl = React.useMemo(
+    () =>
+      buildCustomerDashboardRequestUrl("/api/dashboard/customer-kpis", {
+        periodMode,
+        timeframe,
+        range,
+        dateRange,
+        selectedCountries,
+        selectedSegments,
+        selectedLanguages,
+      }),
+    [
+      periodMode,
+      timeframe,
+      range,
+      dateRange,
+      selectedCountries,
+      selectedSegments,
+      selectedLanguages,
+    ]
+  );
+  const newCustomersRequestUrl = React.useMemo(
+    () =>
+      buildCustomerDashboardRequestUrl("/api/dashboard/new-customers", {
+        periodMode,
+        timeframe,
+        range,
+        dateRange,
+        selectedCountries,
+        selectedSegments,
+        selectedLanguages,
+      }),
+    [
+      periodMode,
+      timeframe,
+      range,
+      dateRange,
+      selectedCountries,
+      selectedSegments,
+      selectedLanguages,
+    ]
+  );
+  const allCustomersRequestUrl = React.useMemo(
+    () =>
+      buildCustomerDashboardRequestUrl("/api/dashboard/all-customers", {
+        periodMode,
+        timeframe,
+        range,
+        dateRange,
+        selectedCountries,
+        selectedSegments,
+        selectedLanguages,
+      }),
+    [
+      periodMode,
+      timeframe,
+      range,
+      dateRange,
+      selectedCountries,
+      selectedSegments,
+      selectedLanguages,
+    ]
+  );
 
   // Active Users compare
   const [primaryMetric, setPrimaryMetric] = React.useState<"dau" | "wau" | "mau">("dau");
@@ -100,6 +170,9 @@ const DashboardPage: React.FC = () => {
           countries={COUNTRIES}
           selectedCountries={selectedCountries}
           onChangeCountries={setSelectedCountries}
+          languages={LANGUAGES}
+          selectedLanguages={selectedLanguages}
+          onChangeLanguages={setSelectedLanguages}
           selectedSegments={selectedSegments}
           onChangeSegments={setSelectedSegments}
           periodMode={periodMode}
@@ -113,24 +186,31 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
-      {/* ✅ KPI row now driven by segments */}
+      {/*  KPI row now driven by segments */}
       <div className="mt-4">
-        <DashboardStatsRow selectedSegments={effectiveSelectedSegments} />
+        <DashboardStatsRow
+          selectedSegments={effectiveSelectedSegments}
+          requestUrl={customerKpisRequestUrl}
+        />
       </div>
 
-      {/* ✅ Customer charts now driven by segments */}
+      {/*  Customer charts now driven by segments */}
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <NewCustomersCard
           timeframe={timeframe}
           range={range}
           countriesLabel={countriesLabel}
+          languagesLabel={languagesLabel}
           selectedSegments={effectiveSelectedSegments}
+          requestUrl={newCustomersRequestUrl}
         />
         <AllCustomersCard
           timeframe={timeframe}
           range={range}
           countriesLabel={countriesLabel}
+          languagesLabel={languagesLabel}
           selectedSegments={effectiveSelectedSegments}
+          requestUrl={allCustomersRequestUrl}
         />
       </div>
 

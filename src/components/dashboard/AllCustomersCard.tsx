@@ -24,9 +24,11 @@ type Props = {
   timeframe: Timeframe;
   range: number;
   countriesLabel: string;
+  languagesLabel: string;
 
   //  NEW
   selectedSegments: CustomerSegment[];
+  requestUrl: string;
 };
 
 const compact = new Intl.NumberFormat(undefined, { notation: "compact" });
@@ -65,7 +67,9 @@ const AllCustomersCard: React.FC<Props> = ({
   timeframe,
   range,
   countriesLabel,
+  languagesLabel,
   selectedSegments,
+  requestUrl,
 }) => {
   const labels = React.useMemo(
     () => makeLabels(timeframe, Math.max(4, Math.min(range, 24))),
@@ -90,7 +94,7 @@ const AllCustomersCard: React.FC<Props> = ({
   }, [labels]);
 
   const summary = segmentsSummary(selectedSegments);
-  const subtitle = `All customers · ${countriesLabel} · ${timeframe} · last ${range} · ${summary}`;
+  const subtitle = `All customers · ${countriesLabel} · ${languagesLabel} · ${timeframe} · last ${range} · ${summary}`;
 
   const last = data[data.length - 1];
   const primaryStat = React.useMemo(() => {
@@ -117,6 +121,8 @@ const AllCustomersCard: React.FC<Props> = ({
       deltaText="—"
       className={cn(className)}
     >
+      <div className="hidden" data-request-url={requestUrl} aria-hidden />
+
       <div className="flex items-center justify-end">
         <button
           type="button"

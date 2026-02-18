@@ -12,6 +12,7 @@ type DashboardStatsRowProps = {
 
   //  NEW
   selectedSegments: CustomerSegment[];
+  requestUrl: string;
 };
 
 const fmt = new Intl.NumberFormat();
@@ -23,6 +24,7 @@ function sum(nums: number[]) {
 const DashboardStatsRow: React.FC<DashboardStatsRowProps> = ({
   className,
   selectedSegments,
+  requestUrl,
 }) => {
   const segs = normalizeSegments(selectedSegments);
 
@@ -78,6 +80,7 @@ const DashboardStatsRow: React.FC<DashboardStatsRowProps> = ({
 
   return (
     <div
+      data-request-url={requestUrl}
       className={cn(
         "mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
         className
