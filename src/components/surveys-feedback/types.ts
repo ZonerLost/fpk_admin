@@ -7,6 +7,9 @@ export type SubmissionSort = "created_desc" | "created_asc";
 
 export type SurveyResponseType = "multipleChoice" | "freeForm" | "both";
 
+/** NEW */
+export type AskQuestionStatus = "answered" | "unanswered";
+
 export type SubmissionUser = {
   userId: string;
   name: string;
@@ -51,6 +54,14 @@ export type AskQuestionSubmission = SubmissionBase & {
   askQuestion: {
     question: string;
     message: string;
+
+    /** NEW */
+    status: AskQuestionStatus;
+    tags: string[];
+
+    /** NEW: optional admin reply */
+    answer?: string;
+    answeredAt?: string;
   };
   weeklySurvey?: never;
 };
@@ -59,12 +70,21 @@ export type SubmissionItem = WeeklySurveySubmission | AskQuestionSubmission;
 export type WeeklySurveyResponseRow = WeeklySurveySubmission;
 export type AskQuestionRow = AskQuestionSubmission;
 
+/** NEW */
+export type AskStatusFilter = "All" | "Answered" | "Unanswered";
+
 export type SurveysFeedbackFiltersState = {
   country: string;
   language: string;
   type: "All" | SubmissionType;
   userType: "All" | SubmissionUserType;
   sort: SubmissionSort;
+
+  /**NEW: only relevant for AskQuestion */
+  askStatus: AskStatusFilter;
+
+  /** NEW: only relevant for AskQuestion */
+  tags: string[];
 };
 
 export type WeeklySurveyDefinition = {
@@ -79,10 +99,7 @@ export type WeeklySurveyDefinition = {
 };
 export type SurveyVariant = WeeklySurveyDefinition;
 
-export type WeeklySurveyDefinitionDraft = Omit<
-  WeeklySurveyDefinition,
-  "id" | "createdAt"
->;
+export type WeeklySurveyDefinitionDraft = Omit<WeeklySurveyDefinition, "id" | "createdAt">;
 
 export const SUBMISSION_TYPE_OPTIONS: readonly SubmissionType[] = [
   "WeeklySurvey",

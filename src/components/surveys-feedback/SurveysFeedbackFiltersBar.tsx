@@ -2,8 +2,10 @@ import React from "react";
 import Button from "../../shared/inputs/Button";
 import {
   SUBMISSION_USER_TYPE_OPTIONS,
+  type AskStatusFilter,
   type SurveysFeedbackFiltersState,
 } from "./types";
+import TagMultiSelect from "./TagMultiSelect";
 
 type Props = {
   filters: SurveysFeedbackFiltersState;
@@ -12,6 +14,9 @@ type Props = {
   countryOptions: string[];
   languageOptions: string[];
   showUserType?: boolean;
+  showAskStatus?: boolean;
+  showTags?: boolean;
+  tagOptions?: string[];
 };
 
 const SORT_OPTIONS: Array<{
@@ -20,6 +25,12 @@ const SORT_OPTIONS: Array<{
 }> = [
   { value: "created_desc", label: "Newest first" },
   { value: "created_asc", label: "Oldest first" },
+];
+
+const ASK_STATUS_OPTIONS: Array<{ value: AskStatusFilter; label: string }> = [
+  { value: "All", label: "All" },
+  { value: "Unanswered", label: "Unanswered" },
+  { value: "Answered", label: "Answered" },
 ];
 
 const fieldClassName =
@@ -32,6 +43,9 @@ const SurveysFeedbackFiltersBar: React.FC<Props> = ({
   countryOptions,
   languageOptions,
   showUserType = true,
+  showAskStatus = false,
+  showTags = false,
+  tagOptions = [],
 }) => {
   return (
     <div className="flex w-full flex-wrap items-end gap-3">
@@ -93,6 +107,37 @@ const SurveysFeedbackFiltersBar: React.FC<Props> = ({
             ))}
           </select>
         </div>
+      ) : null}
+
+      {showAskStatus ? (
+        <div className="min-w-[160px] flex-1">
+          <label className="mb-1 block text-[11px] font-medium text-white/70 md:text-xs">
+            Status
+          </label>
+          <select
+            value={filters.askStatus}
+            onChange={(event) =>
+              onChange({ askStatus: event.target.value as AskStatusFilter })
+            }
+            className={fieldClassName}
+          >
+            {ASK_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value} className="bg-black">
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
+      {showTags ? (
+        <TagMultiSelect
+          label="Tags"
+          options={tagOptions}
+          value={filters.tags}
+          onChange={(next) => onChange({ tags: next })}
+          className="min-w-[220px]"
+        />
       ) : null}
 
       <div className="min-w-[160px] flex-1">

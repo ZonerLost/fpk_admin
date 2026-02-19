@@ -9,9 +9,7 @@ type Props = {
   weekFilter: number | "All";
   weekOptions: number[];
   onChange: (
-    partial: Partial<
-      Pick<SurveysFeedbackFiltersState, "country" | "language" | "sort">
-    >
+    partial: Partial<Pick<SurveysFeedbackFiltersState, "country" | "language" | "sort">>
   ) => void;
   onWeekFilterChange: (value: number | "All") => void;
   onClear: () => void;

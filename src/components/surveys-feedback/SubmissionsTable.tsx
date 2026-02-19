@@ -6,8 +6,10 @@ import Avatar from "../../shared/data-display/Avatar";
 import Badge from "../../shared/data-display/Badge";
 import Button from "../../shared/inputs/Button";
 import TextClamp from "../../shared/typography/TextClamp";
+import { cn } from "../../shared/utils/cn";
 import {
   getSubmissionUserType,
+  type AskQuestionSubmission,
   type SubmissionItem,
   type SubmissionType,
 } from "./types";
@@ -39,6 +41,20 @@ function toAnswerSnippet(row: Extract<SubmissionItem, { type: "WeeklySurvey" }>)
   return [selected, freeForm].filter(Boolean).join(" | ") || "-";
 }
 
+function askStatusBadge(row: AskQuestionSubmission) {
+  return row.askQuestion.status === "answered" ? (
+    <Badge variant="success">Answered</Badge>
+  ) : (
+    <Badge variant="warning">Unanswered</Badge>
+  );
+}
+
+function tagsPreview(tags: string[]) {
+  if (!tags?.length) return "—";
+  if (tags.length <= 2) return tags.join(", ");
+  return `${tags.slice(0, 2).join(", ")} +${tags.length - 2}`;
+}
+
 const SubmissionsTable: React.FC<Props> = ({ mode, rows, onView }) => {
   const columns = React.useMemo(() => {
     const userColumn: Column<SubmissionItem> = {
@@ -50,12 +66,8 @@ const SubmissionsTable: React.FC<Props> = ({ mode, rows, onView }) => {
         <div className="flex items-center gap-3 min-w-0">
           <Avatar src={row.user.avatarUrl} name={row.user.name} size={36} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-slate-100">
-              {row.user.name}
-            </p>
-            <p className="truncate text-xs text-slate-400">
-              {row.user.email || row.user.userId}
-            </p>
+            <p className="truncate text-sm font-medium text-slate-100">{row.user.name}</p>
+            <p className="truncate text-xs text-slate-400">{row.user.email || row.user.userId}</p>
           </div>
         </div>
       ),
@@ -122,10 +134,7 @@ const SubmissionsTable: React.FC<Props> = ({ mode, rows, onView }) => {
                     {row.weeklySurvey.question}
                   </TextClamp>
                 </div>
-                <p
-                  className="mt-1 text-xs text-slate-400"
-                  title={`Week ${row.weeklySurvey.week}`}
-                >
+                <p className="mt-1 text-xs text-slate-400" title={`Week ${row.weeklySurvey.week}`}>
                   Week {row.weeklySurvey.week}
                 </p>
                 <div className="mt-1 md:hidden" title={toAnswerSnippet(row)}>
@@ -174,6 +183,19 @@ const SubmissionsTable: React.FC<Props> = ({ mode, rows, onView }) => {
     const askColumns: Column<SubmissionItem>[] = [
       userColumn,
       userTypeColumn,
+
+      /** NEW */
+      {
+        id: "status",
+        header: "Status",
+        width: "8rem",
+        headerClassName: HEADER_CLASS,
+        cell: (row) => {
+          if (row.type !== "AskQuestion") return null;
+          return askStatusBadge(row);
+        },
+      },
+
       {
         id: "question",
         header: "Question",
@@ -181,6 +203,8 @@ const SubmissionsTable: React.FC<Props> = ({ mode, rows, onView }) => {
         headerClassName: HEADER_CLASS,
         cell: (row) => {
           if (row.type !== "AskQuestion") return null;
+
+          const meta = tagsPreview(row.askQuestion.tags);
           return (
             <div className="min-w-0">
               <div title={row.askQuestion.question}>
@@ -188,6 +212,19 @@ const SubmissionsTable: React.FC<Props> = ({ mode, rows, onView }) => {
                   {row.askQuestion.question}
                 </TextClamp>
               </div>
+
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "text-xs",
+                    row.askQuestion.tags?.length ? "text-slate-300" : "text-slate-500 italic"
+                  )}
+                  title={meta}
+                >
+                  Tags: {meta}
+                </span>
+              </div>
+
               <div className="mt-1 md:hidden" title={row.askQuestion.message}>
                 <TextClamp lines={2} className="text-xs leading-5 text-slate-300">
                   {row.askQuestion.message}
@@ -197,6 +234,7 @@ const SubmissionsTable: React.FC<Props> = ({ mode, rows, onView }) => {
           );
         },
       },
+
       {
         id: "message",
         header: "Message",
@@ -214,6 +252,7 @@ const SubmissionsTable: React.FC<Props> = ({ mode, rows, onView }) => {
           );
         },
       },
+
       createdColumn,
       actionColumn,
     ];
@@ -228,11 +267,10 @@ const SubmissionsTable: React.FC<Props> = ({ mode, rows, onView }) => {
         data={rows}
         getRowKey={(row) => row.id}
         containerClassName="max-w-full overflow-x-auto scrollbar-thin"
-        tableClassName="w-full min-w-[900px] lg:min-w-full"
+        tableClassName="w-full min-w-[980px] lg:min-w-full"
       />
     </SectionCard>
   );
 };
 
 export default SubmissionsTable;
-

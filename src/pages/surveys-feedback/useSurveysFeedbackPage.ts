@@ -7,6 +7,7 @@ import {
 import {
   getSubmissionUserType,
   type AskQuestionRow,
+  type AskQuestionStatus,
   type SubmissionItem,
   type SubmissionUser,
   type SurveyResponseType,
@@ -20,12 +21,18 @@ import {
 const PAGE_SIZE_OPTIONS = [6, 10, 20, 50] as const;
 const DEFAULT_PAGE_SIZE = 6;
 
+const DEFAULT_TAGS = ["Training", "Learn", "General", "Equipment"] as const;
+
 const INITIAL_FILTERS: SurveysFeedbackFiltersState = {
   country: "All",
   language: "All",
   type: "All",
   userType: "All",
   sort: "created_desc",
+
+  /**  NEW */
+  askStatus: "All",
+  tags: [],
 };
 
 const NAMES = [
@@ -126,9 +133,7 @@ function makeMockSubmissions(total = 90): SubmissionItem[] {
       email: index % 7 === 0 ? undefined : buildEmail(name, index),
       avatarUrl:
         index % 3 === 0
-          ? `https://randomuser.me/api/portraits/${
-              index % 2 === 0 ? "women" : "men"
-            }/${(index % 70) + 1}.jpg`
+          ? `https://randomuser.me/api/portraits/${index % 2 === 0 ? "women" : "men"}/${(index % 70) + 1}.jpg`
           : undefined,
       country: locale.country,
       language: locale.language,
@@ -140,6 +145,9 @@ function makeMockSubmissions(total = 90): SubmissionItem[] {
     const createdAt = new Date(now - index * 1000 * 60 * 60 * 4).toISOString();
 
     if (index % 3 === 0) {
+      const status: AskQuestionStatus = index % 2 === 0 ? "unanswered" : "answered";
+      const tags = index % 4 === 0 ? ["Training"] : index % 4 === 1 ? ["General"] : index % 4 === 2 ? ["Learn"] : ["Equipment"];
+
       return {
         id: `ask-${index + 1}`,
         createdAt,
@@ -148,15 +156,20 @@ function makeMockSubmissions(total = 90): SubmissionItem[] {
         askQuestion: {
           question: pick(ASK_QUESTIONS, index),
           message: pick(ASK_MESSAGES, index),
+          status,
+          tags,
+          answer:
+            status === "answered"
+              ? "Thanks — yes, you can update it until the weekly survey closes. If you already submitted, reopen the survey and tap “Edit Answer”."
+              : undefined,
+          answeredAt: status === "answered" ? createdAt : undefined,
         },
       };
     }
 
     const survey = pick(WEEKLY_SURVEY_QUESTIONS, index);
     const selectedOptions =
-      survey.responseType === "freeForm"
-        ? []
-        : [survey.options[index % survey.options.length]];
+      survey.responseType === "freeForm" ? [] : [survey.options[index % survey.options.length]];
 
     return {
       id: `weekly-${index + 1}`,
@@ -204,10 +217,11 @@ export function useSurveysFeedbackPage() {
   const [searchValue, setSearchValue] = React.useState("");
   const [filters, setFilters] = React.useState<SurveysFeedbackFiltersState>(INITIAL_FILTERS);
 
-  const [submissions] = React.useState<SubmissionItem[]>(() => makeMockSubmissions());
-  const [surveyVariants, setSurveyVariants] = React.useState<SurveyVariant[]>(() =>
-    makeMockSurveyDefinitions()
-  );
+  const [submissions, setSubmissions] = React.useState<SubmissionItem[]>(() => makeMockSubmissions());
+  const [surveyVariants, setSurveyVariants] = React.useState<SurveyVariant[]>(() => makeMockSurveyDefinitions());
+
+  /**  NEW: tags catalog */
+  const [tagCatalog, setTagCatalog] = React.useState<string[]>(() => [...DEFAULT_TAGS]);
 
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
@@ -218,6 +232,9 @@ export function useSurveysFeedbackPage() {
   const [isSurveyEditorOpen, setIsSurveyEditorOpen] = React.useState(false);
   const [editingSurvey, setEditingSurvey] = React.useState<SurveyVariant | null>(null);
   const [builderWeekFilter, setBuilderWeekFilter] = React.useState<number | "All">("All");
+
+  /**  NEW */
+  const [isTagsManagerOpen, setIsTagsManagerOpen] = React.useState(false);
 
   const search = searchValue;
   const setSearch = (value: string) => setSearchValue(value);
@@ -232,26 +249,17 @@ export function useSurveysFeedbackPage() {
   }, [filters.country]);
 
   const weekOptions = React.useMemo(
-    () =>
-      Array.from(new Set(surveyVariants.map((item) => item.week))).sort((left, right) =>
-        left - right
-      ),
+    () => Array.from(new Set(surveyVariants.map((item) => item.week))).sort((a, b) => a - b),
     [surveyVariants]
   );
 
-  const editorCountryOptions = React.useMemo(
-    () => COUNTRY_CATALOG.map((item) => item.country),
-    []
-  );
+  const editorCountryOptions = React.useMemo(() => COUNTRY_CATALOG.map((item) => item.country), []);
   const editorLanguageOptions = React.useMemo(
     () => Array.from(new Set(COUNTRY_CATALOG.flatMap((item) => item.languages))),
     []
   );
   const editorCountryLanguageMap = React.useMemo(
-    () =>
-      Object.fromEntries(
-        COUNTRY_CATALOG.map((entry) => [entry.country, [...entry.languages]])
-      ),
+    () => Object.fromEntries(COUNTRY_CATALOG.map((entry) => [entry.country, [...entry.languages]])),
     []
   );
 
@@ -291,6 +299,8 @@ export function useSurveysFeedbackPage() {
     filters.language,
     filters.userType,
     filters.sort,
+    filters.askStatus,
+    filters.tags,
     builderWeekFilter,
   ]);
 
@@ -301,20 +311,30 @@ export function useSurveysFeedbackPage() {
 
     let list = submissions.filter((item) => {
       if (item.type !== activeTab) return false;
+
       if (filters.country !== "All" && item.user.country !== filters.country) return false;
       if (filters.language !== "All" && item.user.language !== filters.language) return false;
 
-      const userType = getSubmissionUserType(item.user);
-      if (filters.userType !== "All" && userType !== filters.userType) return false;
+      const uType = getSubmissionUserType(item.user);
+      if (filters.userType !== "All" && uType !== filters.userType) return false;
+
+      /** NEW: AskQuestion status + tag filtering */
+      if (item.type === "AskQuestion") {
+        if (filters.askStatus === "Answered" && item.askQuestion.status !== "answered") return false;
+        if (filters.askStatus === "Unanswered" && item.askQuestion.status !== "unanswered") return false;
+
+        if (filters.tags.length > 0) {
+          const hasAny = filters.tags.some((t) => item.askQuestion.tags?.includes(t));
+          if (!hasAny) return false;
+        }
+      }
 
       if (!query) return true;
 
       const text =
         item.type === "AskQuestion"
-          ? `${item.askQuestion.question} ${item.askQuestion.message}`
-          : `${item.weeklySurvey.question} ${item.weeklySurvey.selectedOptions.join(
-              " "
-            )} ${item.weeklySurvey.freeFormAnswer || ""}`;
+          ? `${item.askQuestion.question} ${item.askQuestion.message} ${item.askQuestion.answer || ""} ${(item.askQuestion.tags || []).join(" ")} ${item.askQuestion.status}`
+          : `${item.weeklySurvey.question} ${item.weeklySurvey.selectedOptions.join(" ")} ${item.weeklySurvey.freeFormAnswer || ""}`;
 
       const haystack = [
         item.user.name,
@@ -332,9 +352,7 @@ export function useSurveysFeedbackPage() {
     });
 
     list = [...list].sort((left, right) => {
-      if (filters.sort === "created_asc") {
-        return left.createdAt.localeCompare(right.createdAt);
-      }
+      if (filters.sort === "created_asc") return left.createdAt.localeCompare(right.createdAt);
       return right.createdAt.localeCompare(left.createdAt);
     });
 
@@ -347,6 +365,8 @@ export function useSurveysFeedbackPage() {
     filters.language,
     filters.userType,
     filters.sort,
+    filters.askStatus,
+    filters.tags,
   ]);
 
   const filteredSurveyVariants = React.useMemo(() => {
@@ -376,25 +396,14 @@ export function useSurveysFeedbackPage() {
     });
 
     list = [...list].sort((left, right) => {
-      if (filters.sort === "created_asc") {
-        return left.createdAt.localeCompare(right.createdAt);
-      }
+      if (filters.sort === "created_asc") return left.createdAt.localeCompare(right.createdAt);
       return right.createdAt.localeCompare(left.createdAt);
     });
 
     return list;
-  }, [
-    surveyVariants,
-    activeTab,
-    searchValue,
-    filters.country,
-    filters.language,
-    filters.sort,
-    builderWeekFilter,
-  ]);
+  }, [surveyVariants, activeTab, searchValue, filters.country, filters.language, filters.sort, builderWeekFilter]);
 
-  const total =
-    activeTab === "SurveyBuilder" ? filteredSurveyVariants.length : filteredSubmissions.length;
+  const total = activeTab === "SurveyBuilder" ? filteredSurveyVariants.length : filteredSubmissions.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(page, totalPages);
   const startIndex = (safePage - 1) * pageSize;
@@ -414,13 +423,19 @@ export function useSurveysFeedbackPage() {
   );
 
   const weeklyRows = React.useMemo(
-    () => paginatedSubmissions.filter((item): item is WeeklySurveyResponseRow => item.type === "WeeklySurvey"),
+    () => paginatedSubmissions.filter((i): i is WeeklySurveyResponseRow => i.type === "WeeklySurvey"),
     [paginatedSubmissions]
   );
 
   const askRows = React.useMemo(
-    () => paginatedSubmissions.filter((item): item is AskQuestionRow => item.type === "AskQuestion"),
+    () => paginatedSubmissions.filter((i): i is AskQuestionRow => i.type === "AskQuestion"),
     [paginatedSubmissions]
+  );
+
+  /**  NEW: full list for charts (filtered, not paginated) */
+  const askInsightsRows = React.useMemo(
+    () => filteredSubmissions.filter((i): i is AskQuestionRow => i.type === "AskQuestion"),
+    [filteredSubmissions]
   );
 
   const openDetails = (submission: SubmissionItem) => {
@@ -452,11 +467,7 @@ export function useSurveysFeedbackPage() {
   const saveWeeklySurveyDefinition = (draft: WeeklySurveyDefinitionDraft) => {
     setSurveyVariants((prev) => {
       if (editingSurvey) {
-        return prev.map((item) =>
-          item.id === editingSurvey.id
-            ? { ...item, ...draft }
-            : item
-        );
+        return prev.map((item) => (item.id === editingSurvey.id ? { ...item, ...draft } : item));
       }
 
       const next: SurveyVariant = {
@@ -493,6 +504,63 @@ export function useSurveysFeedbackPage() {
       }
     : null;
 
+  /**  NEW: update AskQuestion status/tags/answer */
+  const updateAskQuestion = (
+    id: string,
+    patch: { status: AskQuestionStatus; tags: string[]; answer?: string }
+  ) => {
+    setSubmissions((prev) =>
+      prev.map((item) => {
+        if (item.id !== id || item.type !== "AskQuestion") return item;
+
+        const nextStatus = patch.status;
+        const answeredAt =
+          nextStatus === "answered" ? item.askQuestion.answeredAt || new Date().toISOString() : undefined;
+
+        return {
+          ...item,
+          askQuestion: {
+            ...item.askQuestion,
+            status: nextStatus,
+            tags: patch.tags,
+            answer: nextStatus === "answered" ? patch.answer : undefined,
+            answeredAt,
+          },
+        };
+      })
+    );
+  };
+
+  /**  NEW: tag manager */
+  const openTagsManager = () => setIsTagsManagerOpen(true);
+  const closeTagsManager = () => setIsTagsManagerOpen(false);
+
+  const createTag = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setTagCatalog((prev) => {
+      if (prev.some((t) => t.toLowerCase() === trimmed.toLowerCase())) return prev;
+      return [...prev, trimmed];
+    });
+  };
+
+  const deleteTag = (name: string) => {
+    setTagCatalog((prev) => prev.filter((t) => t !== name));
+    setSubmissions((prev) =>
+      prev.map((item) => {
+        if (item.type !== "AskQuestion") return item;
+        if (!item.askQuestion.tags?.includes(name)) return item;
+        return {
+          ...item,
+          askQuestion: { ...item.askQuestion, tags: item.askQuestion.tags.filter((t) => t !== name) },
+        };
+      })
+    );
+
+    // if filter currently includes deleted tag, remove it
+    setFilters((prev) => ({ ...prev, tags: prev.tags.filter((t) => t !== name) }));
+  };
+
   return {
     activeTab,
     handleTabChange,
@@ -510,6 +578,7 @@ export function useSurveysFeedbackPage() {
 
     weeklyRows,
     askRows,
+    askInsightsRows,
     surveyVariants: paginatedSurveyVariants,
     total,
     page: safePage,
@@ -536,5 +605,14 @@ export function useSurveysFeedbackPage() {
     editorCountryLanguageMap,
     editorInitialDraft,
     isEditingSurvey: Boolean(editingSurvey),
+
+    /**  NEW exports */
+    tagOptions: tagCatalog,
+    isTagsManagerOpen,
+    openTagsManager,
+    closeTagsManager,
+    createTag,
+    deleteTag,
+    updateAskQuestion,
   };
 }
