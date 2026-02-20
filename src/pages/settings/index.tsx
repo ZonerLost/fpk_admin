@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/refs */
 import React from "react";
 import PageShell from "../../shared/layout/PageShell";
 import PageHeader from "../../shared/layout/PageHeader";
@@ -9,6 +8,8 @@ import FaqSettingsSection from "../settings/sections/faq/components/FaqSettingsS
 // Kept for future use:
 // import ContentReleaseSettingsSection from "../settings/sections/content/components/ContentReleaseSettingsSection";
 import PricingSettingsSection from "../settings/sections/pricing/PricingSettingsSection";
+
+import CountriesLanguagesSettingsSection from "../../components/settings/CountriesLanguagesSettingsSection";
 import LocalizationSettingsSection from "../../components/settings/LocalizationSettingsSection";
 import NotificationsSettingsSection from "../../components/settings/NotificationsSettingsSection";
 import GamificationSettingsSection from "../../components/settings/GamificationSettingsSection";
@@ -18,6 +19,7 @@ import IntegrationsSettingsSection from "../../components/settings/IntegrationsS
 const SETTINGS_TABS = [
   // "Content & Release", // Kept for future use
   "Plans & Pricing",
+  "Countries & Languages",
   "Legal",
   "Notifications",
   "Gamification",
@@ -37,10 +39,7 @@ const TAB_QS_KEY = "tab";
 
 function normalizeTab(input: string | null): SettingsTab | null {
   if (!input) return null;
-  // support both "FAQ" and "Faq" etc.
-  const found = SETTINGS_TABS.find(
-    (t) => t.toLowerCase() === input.toLowerCase(),
-  );
+  const found = SETTINGS_TABS.find((t) => t.toLowerCase() === input.toLowerCase());
   return found ?? null;
 }
 
@@ -61,24 +60,21 @@ const TabButton = React.memo(function TabButton({
   tab,
   active,
   onClick,
-  buttonRef,
+  setRef,
 }: {
   tab: SettingsTab;
   active: boolean;
   onClick: () => void;
-  buttonRef?: React.RefObject<HTMLButtonElement>;
+  setRef?: (el: HTMLButtonElement | null) => void;
 }) {
   return (
     <button
-      ref={buttonRef}
-      key={tab}
+      ref={setRef}
       type="button"
       onClick={onClick}
       className={cn(
         "inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full px-4 text-xs font-semibold transition md:h-11 md:px-5 md:text-sm",
-        active
-          ? "bg-emerald-500 text-black shadow-sm"
-          : "bg-transparent text-slate-300 hover:bg-white/10",
+        active ? "bg-emerald-500 text-black shadow-sm" : "bg-transparent text-slate-300 hover:bg-white/10",
       )}
       role="tab"
       aria-selected={active}
@@ -89,23 +85,17 @@ const TabButton = React.memo(function TabButton({
   );
 });
 
+function makeTabRefRecord(): Record<SettingsTab, HTMLButtonElement | null> {
+  const obj = {} as Record<SettingsTab, HTMLButtonElement | null>;
+  SETTINGS_TABS.forEach((t) => (obj[t] = null));
+  return obj;
+}
+
 const SettingsPage: React.FC = () => {
   const initial = React.useMemo(() => getTabQuery() ?? "Plans & Pricing", []);
   const [activeTab, setActiveTab] = React.useState<SettingsTab>(initial);
 
-  const tabsWrapRef = React.useRef<HTMLDivElement | null>(null);
-  const tabBtnRefs = React.useRef<
-    Record<SettingsTab, HTMLButtonElement | null>
-  >({
-    // "Content & Release": null, // Kept for future use
-    "Plans & Pricing": null,
-    Legal: null,
-    Notifications: null,
-    Gamification: null,
-    "Admin & Security": null,
-    Integrations: null,
-    FAQ: null,
-  });
+  const tabBtnRefs = React.useRef<Record<SettingsTab, HTMLButtonElement | null>>(makeTabRefRecord());
 
   // keep URL in sync
   React.useEffect(() => {
@@ -114,8 +104,7 @@ const SettingsPage: React.FC = () => {
 
   // scroll active tab into view (smooth)
   React.useEffect(() => {
-    const btn = tabBtnRefs.current[activeTab];
-    btn?.scrollIntoView({
+    tabBtnRefs.current[activeTab]?.scrollIntoView({
       behavior: "smooth",
       block: "nearest",
       inline: "center",
@@ -169,8 +158,7 @@ const SettingsPage: React.FC = () => {
         <PageHeader title="Settings" subtitle="Restricted area" />
         <SectionCard className="mt-4 bg-[#04130d]">
           <p className="text-xs text-slate-300 md:text-sm">
-            Only <span className="font-semibold">Super Admin</span> can access
-            Settings.
+            Only <span className="font-semibold">Super Admin</span> can access Settings.
           </p>
         </SectionCard>
       </PageShell>
@@ -181,13 +169,12 @@ const SettingsPage: React.FC = () => {
     <PageShell>
       <PageHeader
         title="Settings"
-        subtitle="Configure release defaults, pricing by country, legal docs, gamification, notifications, and admin security."
+        subtitle="Configure release defaults, pricing by country, countries & languages, legal docs, gamification, notifications, and admin security."
       />
 
       {/* Sticky tabs bar like the screenshots */}
       <div className="sticky top-0 z-20 -mx-2 mt-4 px-2 pt-2">
         <div
-          ref={tabsWrapRef}
           className={cn(
             "flex items-center gap-2 overflow-x-auto whitespace-nowrap rounded-full bg-[#04130d] p-2 text-xs md:text-sm",
             "scrollbar-thin md:overflow-visible",
@@ -202,11 +189,9 @@ const SettingsPage: React.FC = () => {
               tab={tab}
               active={activeTab === tab}
               onClick={() => setActiveTab(tab)}
-              buttonRef={
-                {
-                  current: tabBtnRefs.current[tab],
-                } as React.RefObject<HTMLButtonElement>
-              }
+              setRef={(el) => {
+                tabBtnRefs.current[tab] = el;
+              }}
             />
           ))}
         </div>
@@ -214,95 +199,50 @@ const SettingsPage: React.FC = () => {
 
       {/* Panels */}
       <div className="mt-6 min-w-0 space-y-6">
-        {/* If KEEP_MOUNTED = false, only active tab renders (better perf).
-            If true, all render but hidden (preserves state across tabs). */}
-
-        {/* Kept for future use:
-        {(KEEP_MOUNTED || activeTab === "Content & Release") && (
-          <div
-            className={cn(
-              !KEEP_MOUNTED && "block",
-              KEEP_MOUNTED && activeTab !== "Content & Release" && "hidden",
-            )}
-          >
-            <ContentReleaseSettingsSection />
-          </div>
-        )}
-        */}
-
         {(KEEP_MOUNTED || activeTab === "Plans & Pricing") && (
-          <div
-            className={cn(
-              !KEEP_MOUNTED && "block",
-              KEEP_MOUNTED && activeTab !== "Plans & Pricing" && "hidden",
-            )}
-          >
+          <div className={cn(!KEEP_MOUNTED && "block", KEEP_MOUNTED && activeTab !== "Plans & Pricing" && "hidden")}>
             <PricingSettingsSection />
           </div>
         )}
 
+        {(KEEP_MOUNTED || activeTab === "Countries & Languages") && (
+          <div className={cn(!KEEP_MOUNTED && "block", KEEP_MOUNTED && activeTab !== "Countries & Languages" && "hidden")}>
+            <CountriesLanguagesSettingsSection />
+          </div>
+        )}
+
         {(KEEP_MOUNTED || activeTab === "Legal") && (
-          <div
-            className={cn(
-              !KEEP_MOUNTED && "block",
-              KEEP_MOUNTED && activeTab !== "Legal" && "hidden",
-            )}
-          >
+          <div className={cn(!KEEP_MOUNTED && "block", KEEP_MOUNTED && activeTab !== "Legal" && "hidden")}>
             <LocalizationSettingsSection />
           </div>
         )}
 
         {(KEEP_MOUNTED || activeTab === "Notifications") && (
-          <div
-            className={cn(
-              !KEEP_MOUNTED && "block",
-              KEEP_MOUNTED && activeTab !== "Notifications" && "hidden",
-            )}
-          >
+          <div className={cn(!KEEP_MOUNTED && "block", KEEP_MOUNTED && activeTab !== "Notifications" && "hidden")}>
             <NotificationsSettingsSection />
           </div>
         )}
 
         {(KEEP_MOUNTED || activeTab === "Gamification") && (
-          <div
-            className={cn(
-              !KEEP_MOUNTED && "block",
-              KEEP_MOUNTED && activeTab !== "Gamification" && "hidden",
-            )}
-          >
+          <div className={cn(!KEEP_MOUNTED && "block", KEEP_MOUNTED && activeTab !== "Gamification" && "hidden")}>
             <GamificationSettingsSection />
           </div>
         )}
 
         {(KEEP_MOUNTED || activeTab === "Admin & Security") && (
-          <div
-            className={cn(
-              !KEEP_MOUNTED && "block",
-              KEEP_MOUNTED && activeTab !== "Admin & Security" && "hidden",
-            )}
-          >
+          <div className={cn(!KEEP_MOUNTED && "block", KEEP_MOUNTED && activeTab !== "Admin & Security" && "hidden")}>
             <AdminRolesSettingsSection />
           </div>
         )}
 
         {(KEEP_MOUNTED || activeTab === "Integrations") && (
-          <div
-            className={cn(
-              !KEEP_MOUNTED && "block",
-              KEEP_MOUNTED && activeTab !== "Integrations" && "hidden",
-            )}
-          >
+          <div className={cn(!KEEP_MOUNTED && "block", KEEP_MOUNTED && activeTab !== "Integrations" && "hidden")}>
             <IntegrationsSettingsSection />
           </div>
         )}
 
         {(KEEP_MOUNTED || activeTab === "FAQ") && (
-          <div
-            className={cn(
-              !KEEP_MOUNTED && "block",
-              KEEP_MOUNTED && activeTab !== "FAQ" && "hidden",
-            )}
-          >
+          <div className={cn(!KEEP_MOUNTED && "block", KEEP_MOUNTED && activeTab !== "FAQ" && "hidden")}>
             <FaqSettingsSection />
           </div>
         )}
